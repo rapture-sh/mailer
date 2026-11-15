@@ -1,0 +1,29 @@
+---
+from: auth
+subject:
+  key: magic-code.subject
+sample:
+  code: "519204"
+---
+{{#> layout
+  heading=(t "magic-code.heading")
+  closing=(t "magic-code.closing")
+}}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px; color: #121825">
+      {{ t "greeting.named" displayName=reader.name }}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 32px 0; font-size: 15px; color: #596579">
+      {{ t "magic-code.body" }}
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding: 20px 32px 4px">
+      <div style="background: #e6eefb; border-radius: 12px; padding: 18px; font-size: 26px; letter-spacing: 6px; color: #2563c4">
+        {{ code }}
+      </div>
+    </td>
+  </tr>
+{{/layout}}

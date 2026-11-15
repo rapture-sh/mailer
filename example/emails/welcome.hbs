@@ -1,0 +1,19 @@
+---
+subject:
+  key: welcome.subject
+---
+{{#> layout
+  heading=(t "welcome.heading")
+  closing=(t "welcome.closing")
+}}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px; color: #121825">
+      {{ t "greeting.named" displayName=reader.name }}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 32px 20px; font-size: 15px; color: #596579">
+      {{ t "welcome.body" }}
+    </td>
+  </tr>
+{{/layout}}

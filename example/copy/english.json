@@ -1,0 +1,22 @@
+{
+  "greeting.named": "Hi {displayName},",
+
+  "magic-code.subject": "Your Acme login code",
+  "magic-code.heading": "Sign in to Acme",
+  "magic-code.body": "Enter this code in the window where you started. It expires in <b>10 minutes</b>.",
+  "magic-code.closing": "If you did not try to sign in, ignore this email. Never share this code with anyone. Write to {supportLink} if you are worried about your account.",
+
+  "welcome.subject": "Welcome to Acme",
+  "welcome.heading": "Welcome to Acme",
+  "welcome.body": "Your account is ready. Have a look around, and tell us what you think.",
+  "welcome.closing": "You received this email because an account was created at {siteLink}.",
+
+  "booking-confirmation.subject": "Your booking for {activityName} is confirmed",
+  "booking-confirmation.heading": "Booking confirmed",
+  "booking-confirmation.intro": "Your booking for <strong>{activityName}</strong> is confirmed for {participantCount} people.",
+  "booking-confirmation.when": "When: {when}",
+  "booking-confirmation.tickets": "Tickets: {tickets}",
+  "booking-confirmation.paid": "You paid {totalAmount}.",
+  "booking-confirmation.voucher": "Voucher {code} was applied.",
+  "booking-confirmation.closing": "Questions about this booking? Write to {supportLink}."
+}

@@ -1,0 +1,22 @@
+{
+  "greeting.named": "Hallo {displayName},",
+
+  "magic-code.subject": "Dein Acme-Anmeldecode",
+  "magic-code.heading": "Bei Acme anmelden",
+  "magic-code.body": "Gib diesen Code in dem Fenster ein, in dem du angefangen hast. Er läuft in <b>10 Minuten</b> ab.",
+  "magic-code.closing": "Falls du dich nicht anmelden wolltest, ignoriere diese E-Mail. Teile den Code mit niemandem. Schreib an {supportLink}, wenn du dir Sorgen um dein Konto machst.",
+
+  "welcome.subject": "Willkommen bei Acme",
+  "welcome.heading": "Willkommen bei Acme",
+  "welcome.body": "Dein Konto ist bereit. Schau dich um und sag uns, was du denkst.",
+  "welcome.closing": "Du erhältst diese E-Mail, weil auf {siteLink} ein Konto erstellt wurde.",
+
+  "booking-confirmation.subject": "Deine Buchung für {activityName} ist bestätigt",
+  "booking-confirmation.heading": "Buchung bestätigt",
+  "booking-confirmation.intro": "Deine Buchung für <strong>{activityName}</strong> ist für {participantCount} Personen bestätigt.",
+  "booking-confirmation.when": "Wann: {when}",
+  "booking-confirmation.tickets": "Tickets: {tickets}",
+  "booking-confirmation.paid": "Du hast {totalAmount} bezahlt.",
+  "booking-confirmation.voucher": "Gutschein {code} wurde eingelöst.",
+  "booking-confirmation.closing": "Fragen zu dieser Buchung? Schreib an {supportLink}."
+}

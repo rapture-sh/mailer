@@ -1,18 +1,15 @@
 import { createMailer } from "@rapture-sh/mailer";
 import { resend } from "@rapture-sh/mailer/resend";
-import { letters, senders } from "./letters";
+import { reader, registry, senders } from "./mailer";
 
 /**
- * The same registry through the real `resend` provider, pointed at mock-resend.
+ * The same letters through the real `resend` provider, pointed at mock-resend.
  *
  *   RESEND_BASE_URL=http://localhost:<port> pnpm example:mock
  *
- * This is the whole reason there is no dev provider in this package: development and CI
- * run the provider code that production runs, over the same wire format, and only the host
+ * This is the whole reason the package ships no dev provider: development and CI run the
+ * provider code that production runs, over the same wire format, and only the host
  * changes. Point it at nothing and you have no coverage of the code that matters.
- *
- * The guard in the provider refuses a non-default base url when NODE_ENV is production, so
- * this arrangement cannot be shipped by accident.
  */
 const baseUrl = process.env.RESEND_BASE_URL;
 
@@ -40,11 +37,11 @@ const mailer = createMailer({
   }),
   senders,
   from: "notifications",
-  templates: letters,
+  templates: registry,
 });
 
 const result = await mailer.sendTemplate("magic-code", {
-  to: { email: "ada@example.com", name: "Ada" },
+  to: { ...reader, locale: "de-CH" },
   fields: { code: "519204" },
   idempotencyKey: `magic-code:${Date.now()}`,
   // Resend declares the schedule capability, so this option exists here and would be a

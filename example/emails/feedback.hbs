@@ -1,0 +1,24 @@
+---
+inbox: feedback@example.com
+subject: New feedback
+reply-to: from
+sample:
+  note: The map is slow on mobile.
+  from: host@example.com
+  page: https://example.com/activities/kayak
+---
+{{!--
+  A letter that comes to us rather than going out, so it names the inbox it lands in and no
+  caller has to address it. Its subject is a line of text rather than a copy key, because
+  nobody at Acme needs it in four languages.
+--}}
+{{#> layout heading="New feedback" closing="Sent from the feedback form." }}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px; color: #121825">{{ note }}</td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 32px 0; font-size: 13px; color: #596579">
+      {{ from }} &middot; {{ page }}
+    </td>
+  </tr>
+{{/layout}}

@@ -1,0 +1,43 @@
+---
+from: notifications
+subject:
+  key: booking-confirmation.subject
+fields:
+  participants: number
+sample:
+  activityName: Kayak tour, Lake Thun
+  participants: 3
+  startsAt: 2026-07-02T08:00:00.000Z
+  timezone: Europe/Zurich
+  tickets:
+    - 2 Adult
+    - 1 Child
+  totalMinor: 12500
+  currency: CHF
+---
+{{#> layout
+  heading=(t "booking-confirmation.heading")
+  closing=(t "booking-confirmation.closing")
+}}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px; color: #121825">
+      {{ t "booking-confirmation.intro"
+         activityName=activityName
+         participantCount=participants }}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 16px 32px 0; font-size: 15px; color: #596579">
+      {{ t "booking-confirmation.when" when=(dateTime startsAt zone=timezone) }}<br />
+      {{ t "booking-confirmation.tickets" tickets=(list tickets) }}<br />
+      {{ t "booking-confirmation.paid" totalAmount=(money totalMinor currency) }}
+    </td>
+  </tr>
+  {{#if voucherCode}}
+    <tr>
+      <td style="padding: 16px 32px 0; font-size: 15px; color: #596579">
+        {{ t "booking-confirmation.voucher" code=voucherCode }}
+      </td>
+    </tr>
+  {{/if}}
+{{/layout}}

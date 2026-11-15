@@ -41,7 +41,17 @@ export type LettersIn<TRegistry> = TRegistry extends { letters: infer TLetters }
   ? TLetters
   : TRegistry;
 
-type CopyIn<TRegistry> = TRegistry extends { copy?: infer TCopy } ? NonNullable<TCopy> : never;
+/**
+ * Both branches are needed. A generated registry's `copy` is optional, so it arrives as
+ * `copy: Config | undefined` once it has been read back out and passed on, and under
+ * `exactOptionalPropertyTypes` a property that can hold `undefined` does not match an
+ * optional one. Matching only the optional shape silently lost every locale.
+ */
+type CopyIn<TRegistry> = TRegistry extends { copy: infer TCopy }
+  ? NonNullable<TCopy>
+  : TRegistry extends { copy?: infer TCopy }
+    ? NonNullable<TCopy>
+    : never;
 
 export type LocaleIn<TRegistry> = LocaleOf<CopyIn<TRegistry>>;
 

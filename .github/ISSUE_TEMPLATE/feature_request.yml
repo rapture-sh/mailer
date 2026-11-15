@@ -1,0 +1,65 @@
+name: Feature request
+description: A provider, a capability, or something the types should catch and do not
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind
+      options:
+        - A new provider
+        - A capability on an existing provider
+        - Something the types should catch
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: feature
+    attributes:
+      label: The provider or capability
+      placeholder: "attachments on the resend provider"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: What you are trying to send
+      description: >
+        The concrete situation you are in. "Our receipts need a PDF attached and I
+        currently drop to the raw SDK" is a much better case than "Resend supports it".
+    validations:
+      required: true
+
+  - type: textarea
+    id: shape
+    attributes:
+      label: What the call would look like
+      description: >
+        The code you want to be able to write, and what should fail to compile if a
+        provider cannot do it. For a provider, link its API docs for sending and for its
+        error responses, since the error mapping is most of the work.
+      render: ts
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope check
+      options:
+        - label: >
+            This is not a rendering engine, a queue, a retry scheduler, a contacts or
+            audience feature, inbound parsing, or analytics. Those are non-goals, listed
+            in the README
+          required: true
+        - label: >
+            If a provider cannot do this, the types should say so rather than the call
+            failing at runtime
+          required: true
+
+  - type: checkboxes
+    id: build-it
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I'd like to implement this myself

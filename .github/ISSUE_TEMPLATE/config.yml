@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/rapture-sh/mailer/security/advisories/new
+    about: Report privately, not as a public issue. Read SECURITY.md first.
+  - name: Local development and the inbox UI
+    url: https://github.com/rapture-sh/mock-resend
+    about: There is no dev provider here on purpose. Point the resend provider at mock-resend.
+  - name: Rapture.sh
+    url: https://rapture.sh
+    about: The wider project this package belongs to.

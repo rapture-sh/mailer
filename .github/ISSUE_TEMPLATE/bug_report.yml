@@ -1,0 +1,72 @@
+name: Bug report
+description: Something is broken, types included
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is it
+      options:
+        - Types (something is not checked, or is checked wrongly)
+        - Error mapping (wrong MailError kind for a provider response)
+        - Retries and backoff
+        - Resend provider
+        - Memory provider
+        - Template registry or send surface
+        - Published package (exports, resolution, publint, attw)
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you called, what you expected, what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: >
+        The smallest snippet that triggers it, including the `createMailer` call, since
+        almost everything here depends on how the registry and the provider were
+        declared. For a type bug, paste the full compiler error.
+      render: ts
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "@rapture-sh/mailer 0.1.0, or the commit you built from"
+    validations:
+      required: true
+
+  - type: input
+    id: typescript
+    attributes:
+      label: TypeScript version and moduleResolution
+      description: Both matter for anything type-related.
+      placeholder: "5.9.3, bundler"
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: Runtime
+      placeholder: "Node 22.17, Convex, Next 16 route handler, Vitest"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: hygiene
+    attributes:
+      label: Before you post
+      options:
+        - label: No API key, real recipient address or message body in this report
+          required: true

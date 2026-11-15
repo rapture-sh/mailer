@@ -6,7 +6,7 @@ import { type ResendProvider, resend } from "~/providers/resend";
 
 const ada = { email: "ada@example.com" };
 
-const senders = { notifications: "Kywi <notifications@kywi.ch>" };
+const senders = { notifications: "Acme <notifications@example.com>" };
 
 const onResend = createMailer({
   provider: resend({
@@ -42,7 +42,7 @@ describe("options typed to the configured provider", () => {
       subject: "Hi",
       text: "Hi",
       tags: [{ name: "letter", value: "welcome" }],
-      cc: ["team@kywi.ch"],
+      cc: ["team@example.com"],
     });
   });
 

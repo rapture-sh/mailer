@@ -3,9 +3,9 @@ import type { MailMessage } from "~/message";
 import { RESEND_BASE_URL, resend } from "~/providers/resend";
 
 const message: MailMessage = {
-  from: "Kywi <auth@kywi.ch>",
+  from: "Acme <auth@example.com>",
   to: { email: "ada@example.com", name: "Ada" },
-  subject: "Your Kywi login code",
+  subject: "Your Acme login code",
   text: "519204",
 };
 
@@ -125,19 +125,19 @@ describe("resend, the request body", () => {
       {
         ...message,
         replyTo: "host@example.com",
-        headers: { "X-Kywi-Letter": "magic-code" },
+        headers: { "X-Acme-Letter": "magic-code" },
         sendAt: new Date("2026-07-02T08:00:00.000Z"),
       },
       { tags: [{ name: "letter", value: "magic-code" }] },
     );
 
     expect(sentBody(calls[0])).toEqual({
-      from: "Kywi <auth@kywi.ch>",
+      from: "Acme <auth@example.com>",
       to: '"Ada" <ada@example.com>',
-      subject: "Your Kywi login code",
+      subject: "Your Acme login code",
       text: "519204",
       reply_to: "host@example.com",
-      headers: { "X-Kywi-Letter": "magic-code" },
+      headers: { "X-Acme-Letter": "magic-code" },
       scheduled_at: "2026-07-02T08:00:00.000Z",
       tags: [{ name: "letter", value: "magic-code" }],
     });
@@ -152,7 +152,7 @@ describe("resend, the request body", () => {
         attachments: [
           {
             filename: "ticket.txt",
-            content: new TextEncoder().encode("Kywi"),
+            content: new TextEncoder().encode("Acme"),
             contentType: "text/plain",
           },
         ],
@@ -161,7 +161,7 @@ describe("resend, the request body", () => {
     );
 
     expect(sentBody(calls[0]).attachments).toEqual([
-      { filename: "ticket.txt", content: "S3l3aQ==", content_type: "text/plain" },
+      { filename: "ticket.txt", content: "QWNtZQ==", content_type: "text/plain" },
     ]);
   });
 

@@ -10,8 +10,8 @@ function setup() {
   const mailer = createMailer({
     provider,
     senders: {
-      auth: "Kywi <auth@kywi.ch>",
-      notifications: "Kywi <notifications@kywi.ch>",
+      auth: "Acme <auth@example.com>",
+      notifications: "Acme <notifications@example.com>",
     },
     from: "notifications",
     templates: ({ letter, internal }) => ({
@@ -23,11 +23,11 @@ function setup() {
         }),
       }),
       welcome: letter({
-        subject: "Welcome to Kywi",
+        subject: "Welcome to Acme",
         body: () => ({ text: "Welcome." }),
       }),
       feedback: internal<{ note: string; email: string }>({
-        inbox: "feedback@kywi.ch",
+        inbox: "feedback@example.com",
         subject: "New feedback",
         replyTo: (fields) => fields.email,
         body: (fields) => ({ text: fields.note }),
@@ -42,7 +42,7 @@ describe("createMailer", () => {
   it("should take the only sender as the default", async () => {
     const mailer = createMailer({
       provider: memory(),
-      senders: { auth: "Kywi <auth@kywi.ch>" },
+      senders: { auth: "Acme <auth@example.com>" },
     });
 
     await expect(mailer.send({ to: ada, subject: "Hello", text: "Hello" })).resolves.toMatchObject({
@@ -54,7 +54,7 @@ describe("createMailer", () => {
     expect(() =>
       createMailer({
         provider: memory(),
-        senders: { auth: "a@kywi.ch", notifications: "n@kywi.ch" },
+        senders: { auth: "a@example.com", notifications: "n@example.com" },
       }),
     ).toThrow(/default sender/);
   });
@@ -70,7 +70,7 @@ describe("mailer.send", () => {
 
     await mailer.send({ to: ada, subject: "Receipt", text: "Thanks." });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <notifications@kywi.ch>");
+    expect(provider.sent[0]?.from).toBe("Acme <notifications@example.com>");
   });
 
   it("should use the sender the call names", async () => {
@@ -78,7 +78,7 @@ describe("mailer.send", () => {
 
     await mailer.send({ from: "auth", to: ada, subject: "Code", text: "519204" });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <auth@kywi.ch>");
+    expect(provider.sent[0]?.from).toBe("Acme <auth@example.com>");
   });
 
   it("should pass attachments through to the provider", async () => {
@@ -109,7 +109,7 @@ describe("mailer.sendTemplate", () => {
 
     await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <auth@kywi.ch>");
+    expect(provider.sent[0]?.from).toBe("Acme <auth@example.com>");
   });
 
   it("should fall back to the default sender when the letter names none", async () => {
@@ -117,7 +117,7 @@ describe("mailer.sendTemplate", () => {
 
     await mailer.sendTemplate("welcome", { to: ada });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <notifications@kywi.ch>");
+    expect(provider.sent[0]?.from).toBe("Acme <notifications@example.com>");
   });
 
   it("should build the subject from the fields", async () => {
@@ -143,7 +143,7 @@ describe("mailer.sendTemplate", () => {
       fields: { note: "The map is slow", email: "host@example.com" },
     });
 
-    expect(provider.sent[0]?.to).toEqual({ email: "feedback@kywi.ch" });
+    expect(provider.sent[0]?.to).toEqual({ email: "feedback@example.com" });
   });
 
   it("should let a caller override an internal letter's inbox", async () => {

@@ -105,7 +105,7 @@ describe("the module it writes", () => {
   });
 
   it("should leave a subject with no placeholder as a string", () => {
-    expect(module).toContain('subject: "Welcome to Kywi",');
+    expect(module).toContain('subject: "Welcome to Acme",');
   });
 
   it("should carry the sender, the inbox and the reply-to field through", () => {

@@ -10,8 +10,8 @@ import { templates } from "../build/generated/templates";
 const mailer = createMailer({
   provider: memory(),
   senders: {
-    auth: "Kywi <auth@example.com>",
-    notifications: "Kywi <notifications@example.com>",
+    auth: "Acme <auth@example.com>",
+    notifications: "Acme <notifications@example.com>",
   },
   from: "notifications",
   templates,
@@ -22,7 +22,7 @@ const ada = { email: "ada@example.com", name: "Ada" };
 const booking = {
   activityName: "Kayak tour, Lake Thun",
   participants: 3,
-  reference: "KYW-4182",
+  reference: "REF-4182",
   tickets: [{ name: "Adult", quantity: "2" }],
 };
 

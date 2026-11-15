@@ -4,9 +4,9 @@ import { memory } from "~/providers/memory";
 
 function message(overrides: Partial<MailMessage> = {}): MailMessage {
   return {
-    from: "Kywi <auth@kywi.ch>",
+    from: "Acme <auth@example.com>",
     to: { email: "ada@example.com" },
-    subject: "Your Kywi login code",
+    subject: "Your Acme login code",
     text: "519204",
     ...overrides,
   };

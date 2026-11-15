@@ -21,7 +21,7 @@ export const templates = defineTemplates<Letters>({
     sample: {
       activityName: "Kayak tour, Lake Thun",
       participants: 3,
-      reference: "KYW-4182",
+      reference: "REF-4182",
       tickets: [{"name":"Adult","quantity":"2"}],
     },
   },
@@ -47,7 +47,7 @@ export const templates = defineTemplates<Letters>({
   },
   "welcome": {
     addressed: "caller",
-    subject: "Welcome to Kywi",
+    subject: "Welcome to Acme",
     html: bodies["welcome"],
   },
 });

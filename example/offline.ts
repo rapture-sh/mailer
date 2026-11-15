@@ -49,12 +49,12 @@ await mailer.sendTemplate("feedback", {
 // Not every message is a template. This one is rendered elsewhere and sent as it is.
 const receipt = await mailer.send({
   to: ada,
-  subject: "Receipt KYW-4182",
+  subject: "Receipt REF-4182",
   text: "Thanks for your booking.",
   attachments: [
     {
       filename: "receipt.txt",
-      content: new TextEncoder().encode("Kywi receipt KYW-4182"),
+      content: new TextEncoder().encode("Acme receipt REF-4182"),
       contentType: "text/plain",
     },
   ],

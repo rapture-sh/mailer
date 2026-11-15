@@ -48,7 +48,7 @@ const mailer = createMailer({
     apiKey: env.RESEND_API_KEY,
     baseUrl: env.RESEND_BASE_URL,
   }),
-  from: "Kywi <noreply@kywi.ch>",
+  from: "Acme <noreply@example.com>",
   templates: {
     "account-deletion-code": defineTemplate<{ code: string }>({
       subject: (f) => `Your code is ${f.code}`,
@@ -259,7 +259,7 @@ assertions, a `sent` accessor and a `clear()`:
 import { memory } from "@rapture-sh/mailer/memory";
 
 const provider = memory();
-const mailer = createMailer({ provider, from: "Kywi <noreply@kywi.ch>", templates });
+const mailer = createMailer({ provider, from: "Acme <noreply@example.com>", templates });
 
 await mailer.send("account-deletion-code", to, { code: "519204" });
 

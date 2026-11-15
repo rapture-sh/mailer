@@ -6,8 +6,8 @@ import type { LetterBuilder } from "@rapture-sh/mailer";
  * exist.
  */
 export const senders = {
-  auth: "Kywi <auth@example.com>",
-  notifications: "Kywi <notifications@example.com>",
+  auth: "Acme <auth@example.com>",
+  notifications: "Acme <notifications@example.com>",
 };
 
 export type Sender = keyof typeof senders;
@@ -36,9 +36,9 @@ export const letters = ({ letter, internal }: LetterBuilder<Sender>) => ({
   }),
 
   welcome: letter({
-    subject: "Welcome to Kywi",
+    subject: "Welcome to Acme",
     body: (_fields, { reader }) => ({
-      text: `Hi ${reader.name ?? "there"}, welcome to Kywi.`,
+      text: `Hi ${reader.name ?? "there"}, welcome to Acme.`,
     }),
   }),
 

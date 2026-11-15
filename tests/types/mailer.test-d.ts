@@ -8,8 +8,8 @@ const ada = { email: "ada@example.com", name: "Ada" };
 const mailer = createMailer({
   provider: memory(),
   senders: {
-    auth: "Kywi <auth@kywi.ch>",
-    notifications: "Kywi <notifications@kywi.ch>",
+    auth: "Acme <auth@example.com>",
+    notifications: "Acme <notifications@example.com>",
   },
   from: "notifications",
   templates: ({ letter, internal }) => ({
@@ -24,18 +24,18 @@ const mailer = createMailer({
       },
     }),
     welcome: letter({
-      subject: "Welcome to Kywi",
+      subject: "Welcome to Acme",
       body: () => ({ text: "Welcome." }),
     }),
     feedback: internal<{ note: string }>({
-      inbox: "feedback@kywi.ch",
+      inbox: "feedback@example.com",
       subject: "New feedback",
       body: (fields) => ({ text: fields.note }),
     }),
   }),
 });
 
-const bare = createMailer({ provider: memory(), senders: { auth: "a@kywi.ch" } });
+const bare = createMailer({ provider: memory(), senders: { auth: "a@example.com" } });
 
 describe("mailer.sendTemplate", () => {
   it("should take only a name from the registry", async () => {
@@ -88,7 +88,7 @@ describe("mailer.sendTemplate", () => {
 describe("mailer.send", () => {
   it("should take a sender key, never an address", async () => {
     // @ts-expect-error a sender is named, not spelled out
-    await mailer.send({ from: "Kywi <auth@kywi.ch>", to: ada, subject: "Hi", text: "Hi" });
+    await mailer.send({ from: "Acme <auth@example.com>", to: ada, subject: "Hi", text: "Hi" });
   });
 
   it("should reject a sender that was not declared", async () => {
@@ -116,8 +116,8 @@ describe("capabilities", () => {
       text: "Attached.",
       attachments: [{ filename: "receipt.pdf", content: "JVBERi0=" }],
       idempotencyKey: "receipt-1",
-      replyTo: "support@kywi.ch",
-      headers: { "X-Kywi-Letter": "receipt" },
+      replyTo: "support@example.com",
+      headers: { "X-Acme-Letter": "receipt" },
     });
   });
 

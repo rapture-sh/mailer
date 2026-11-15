@@ -14,8 +14,8 @@ function setup() {
   const mailer = createMailer({
     provider,
     senders: {
-      auth: "Kywi <auth@example.com>",
-      notifications: "Kywi <notifications@example.com>",
+      auth: "Acme <auth@example.com>",
+      notifications: "Acme <notifications@example.com>",
     },
     from: "notifications",
     templates,
@@ -29,7 +29,7 @@ const ada = { email: "ada@example.com", name: "Ada" };
 const booking = {
   activityName: "Kayak tour, Lake Thun",
   participants: 3,
-  reference: "KYW-4182",
+  reference: "REF-4182",
   tickets: [{ name: "Adult", quantity: "2" }],
 };
 
@@ -47,7 +47,7 @@ describe("a generated letter", () => {
 
     await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <auth@example.com>");
+    expect(provider.sent[0]?.from).toBe("Acme <auth@example.com>");
   });
 
   it("should render the body, the fields and the reader through the partial", async () => {
@@ -67,7 +67,7 @@ describe("a generated letter", () => {
 
     await mailer.sendTemplate("welcome", { to: ada });
 
-    expect(provider.sent[0]?.from).toBe("Kywi <notifications@example.com>");
+    expect(provider.sent[0]?.from).toBe("Acme <notifications@example.com>");
   });
 
   it("should address a letter with an inbox to itself", async () => {

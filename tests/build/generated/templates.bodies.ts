@@ -125,7 +125,7 @@ export const bodies = {
 
   return "  <p>Hi "
     + container.escapeExpression(container.lambda(((stack1 = (depth0 != null ? lookupProperty(depth0,"reader") : depth0)) != null ? lookupProperty(stack1,"name") : stack1), depth0))
-    + ", welcome to Kywi.</p>\n";
+    + ", welcome to Acme.</p>\n";
 },"compiler":[8,">= 4.3.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, lookupProperty = container.lookupProperty || function(parent, propertyName) {
         if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {

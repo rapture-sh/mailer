@@ -1,0 +1,28 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# build output
+/dist
+
+# testing
+/coverage
+/.vitest
+
+# env files
+.env*
+
+# editors and os
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# typescript
+*.tsbuildinfo
+
+# local claude code settings
+.claude/settings.local.json

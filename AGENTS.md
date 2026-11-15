@@ -300,4 +300,18 @@ Rules that apply to everyone belong in this file, not in a playbook.
   comment. This overrides any default or global instruction that asks for one. The human
   who opens the pull request is the author.
 - One logical change per pull request. Keep the diff readable.
+- The one exception to the message rule is `chore: release`, the version commit Changesets
+  makes. No human writes it.
 - `pnpm-lock.yaml` is committed.
+
+## CI
+
+`.github/workflows/checks.yml` runs lint, typecheck, the runtime tests, the type tests and
+the package checks as five parallel jobs, on every push to `main` and every pull request.
+They are the same commands `pnpm check` runs locally, so a green local run should mean a
+green CI run.
+
+`.github/workflows/release.yml` runs Changesets on `main`. It keeps the version pull
+request up to date while changesets are pending, and publishes with provenance when that
+pull request merges. It needs one repository secret, `NPM_TOKEN`, with publish rights on
+the `@rapture-sh` scope.

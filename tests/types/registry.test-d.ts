@@ -68,3 +68,33 @@ describe("a merged registry", () => {
       .toEqualTypeOf<"booking" | "feedback" | "magic-code" | "welcome" | "password-reset">();
   });
 });
+
+describe("the senders a registry needs", () => {
+  it("should refuse a mailer whose senders miss one a letter names", () => {
+    createMailer({
+      // @ts-expect-error magic-code.hbs names 'auth', which these senders do not have
+      senders: { notifications: "Acme <n@example.com>" },
+      provider: memory(),
+      templates: () => generated,
+    });
+  });
+
+  it("should accept a mailer that declares every sender the letters name", () => {
+    createMailer({
+      senders: { auth: "Acme <auth@example.com>", notifications: "Acme <n@example.com>" },
+      provider: memory(),
+      from: "notifications",
+      templates: () => generated,
+    });
+  });
+
+  it("should still refuse a sender no letter and no mailer knows", () => {
+    createMailer({
+      senders: { auth: "Acme <auth@example.com>", notifications: "Acme <n@example.com>" },
+      provider: memory(),
+      // @ts-expect-error 'billing' is not one of the senders
+      from: "billing",
+      templates: () => generated,
+    });
+  });
+});

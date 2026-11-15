@@ -86,7 +86,9 @@ describe("the module it writes", () => {
   });
 
   it("should read a field off a placeholder in the body", () => {
-    expect(module).toContain('"magic-code": { addressed: "caller"; fields: { code: string } };');
+    expect(module).toContain(
+      '"magic-code": { addressed: "caller"; from: "auth"; fields: { code: string } };',
+    );
   });
 
   it("should give a letter with no placeholders no fields", () => {
@@ -99,9 +101,14 @@ describe("the module it writes", () => {
     );
   });
 
+  it("should write the sender into the type, not only the value", () => {
+    expect(module).toContain('"magic-code": { addressed: "caller"; from: "auth";');
+    expect(module).toContain('"welcome": { addressed: "caller"; fields: Record<never, never> };');
+  });
+
   it("should read an each block as rows and an if block as optional", () => {
     expect(module).toContain(
-      '"booking": { addressed: "caller"; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };',
+      '"booking": { addressed: "caller"; from: "notifications"; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };',
     );
   });
 

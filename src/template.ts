@@ -119,7 +119,21 @@ export type GeneratedLetter<TFields> = {
  * addresses it and what its fields are. Both are written out rather than inferred, because
  * generated code can afford to be explicit and inference here would have to guess.
  */
-export type GeneratedSpec = Record<string, { addressed: "caller" | "inbox"; fields: object }>;
+export type GeneratedSpec = Record<
+  string,
+  {
+    addressed: "caller" | "inbox";
+    fields: object;
+    /**
+     * The sender this letter names, written out so a mailer whose senders do not include
+     * it fails to compile rather than at send time. Absent where the letter named none.
+     */
+    from?: string;
+  }
+>;
+
+/** The sender a generated entry names, or nothing where it named none. */
+type FromIn<TEntry> = TEntry extends { from: infer TFrom extends string } ? TFrom : never;
 
 export type GeneratedLetters<TSpec extends GeneratedSpec> = {
   [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]>;
@@ -127,8 +141,8 @@ export type GeneratedLetters<TSpec extends GeneratedSpec> = {
 
 export type TemplatesFor<TSpec extends GeneratedSpec> = {
   [K in keyof TSpec]: TSpec[K]["addressed"] extends "inbox"
-    ? InternalLetter<TSpec[K]["fields"]>
-    : Letter<TSpec[K]["fields"]>;
+    ? InternalLetter<TSpec[K]["fields"], FromIn<TSpec[K]>>
+    : Letter<TSpec[K]["fields"], FromIn<TSpec[K]>>;
 };
 
 /**

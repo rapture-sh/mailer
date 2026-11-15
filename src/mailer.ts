@@ -55,6 +55,32 @@ type CopyIn<TRegistry> = TRegistry extends { copy: infer TCopy }
 
 export type LocaleIn<TRegistry> = LocaleOf<CopyIn<TRegistry>>;
 
+/**
+ * Every sender the letters in a registry name.
+ *
+ * A hand written letter's sender is already a key of the senders, because the builder was
+ * handed them. A generated one carries the name it was built with, which is how a letter
+ * file naming a mailbox the mailer never declared is caught here rather than at send time.
+ */
+type SendersNamed<TLetters> = {
+  [K in keyof TLetters]: TLetters[K] extends { from?: infer TFrom extends string } ? TFrom : never;
+}[keyof TLetters];
+
+type MissingSenders<TRegistry, TSenders> = Exclude<
+  SendersNamed<LettersIn<TRegistry>>,
+  keyof TSenders
+>;
+
+/**
+ * Nothing when every sender a letter names was declared, and a requirement for the ones
+ * that were not, so the error lands on `senders` and says which is missing.
+ */
+export type RequiredSenders<TRegistry, TSenders> = [MissingSenders<TRegistry, TSenders>] extends [
+  never,
+]
+  ? Record<never, never>
+  : { senders: Record<MissingSenders<TRegistry, TSenders>, string> };
+
 /** A reader carries a locale only where there are catalogs to read it against. */
 export type Reader<TLocale extends string> = [TLocale] extends [never]
   ? Recipient
@@ -94,7 +120,7 @@ export type MailerConfig<
    */
   templates?: (build: LetterBuilder<keyof TSenders & string>) => TRegistry;
   retry?: Partial<Retry>;
-};
+} & RequiredSenders<TRegistry, TSenders>;
 
 /**
  * With no templates configured there is no `sendTemplate`, because a template registry is

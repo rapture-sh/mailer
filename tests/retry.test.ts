@@ -57,6 +57,16 @@ describe("delayFor", () => {
   });
 });
 
+describe("defaultRetry", () => {
+  it("should wait, so a provider is not hammered when nothing replaces the sleep", async () => {
+    const started = Date.now();
+
+    await defaultRetry.sleep(5);
+
+    expect(Date.now() - started).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("withRetry", () => {
   it("should not retry a send that worked", async () => {
     const { retry, waits } = recorder();

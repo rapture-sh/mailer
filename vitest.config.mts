@@ -30,7 +30,16 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
+      // Nothing but re-exports, so it is covered by everything and measures nothing.
       exclude: ["src/index.ts"],
+      // A floor rather than a target: set just under what the suite reaches, so a change
+      // that drops real coverage fails while a line of error text does not.
+      thresholds: {
+        statements: 95,
+        branches: 86,
+        functions: 97,
+        lines: 96,
+      },
     },
   },
 });

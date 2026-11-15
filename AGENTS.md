@@ -82,7 +82,7 @@ pnpm typecheck               # tsc --noEmit
 pnpm test                    # vitest run
 pnpm test:watch              # vitest
 pnpm test:types              # vitest --typecheck, the primary suite
-pnpm test:coverage           # vitest run --coverage
+pnpm test:coverage           # vitest run --coverage, with the thresholds CI enforces
 pnpm build                   # tsdown, writes dist
 pnpm check:exports           # publint and attw against the built package
 pnpm example                 # every letter through the memory provider, no network
@@ -271,6 +271,9 @@ Write the comment next to it saying what should have failed, because a stray
 
 Conventions, both tiers:
 
+- **Coverage has a floor**, set in `vitest.config.mts` just under what the suite reaches,
+  and CI runs the coverage run rather than the plain one. Raise the floor when the suite
+  rises; never lower it to make a change pass.
 - **Every test name starts with `should`**, reads as a sentence, and says the case it
   covers. Add `when` where the case needs saying. `describe` names the thing under test,
   so a function or a type, and carries no `should`.

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -132,6 +132,41 @@ describe("the catalog checks", () => {
     await expect(run(letter, { en: { "note.body": "A note." } })).rejects.toThrow(
       /the helper 'uppercase' is not part of the body language/,
     );
+  });
+
+  it("should import a locale under an identifier, whatever it is called", async () => {
+    const root = await project(note, {
+      "9-lives": { "note.body": "A note." },
+      "de ch": { "note.body": "Eine Notiz." },
+      "de-ch": { "note.body": "Eine Notiz." },
+    });
+
+    const result = await build({
+      letters: join(root, "letters"),
+      out: join(root, "templates.ts"),
+      copy: { default: "9-lives", catalogs: join(root, "copy") },
+    });
+
+    const bodies = await readFile(result.bodiesOut, "utf8");
+
+    // A name that cannot be an identifier gets one, and two names that sanitise to the
+    // same thing do not collide.
+    expect(bodies).toContain("import copy9Lives from");
+    expect(bodies).toContain("import deCh from");
+    expect(bodies).toContain("import deCh2 from");
+    expect(bodies).toContain('"de ch": deCh,');
+  });
+
+  it("should work with no values declared for every key", async () => {
+    const root = await project(note, { en: { "note.body": "A note." } });
+
+    await expect(
+      build({
+        letters: join(root, "letters"),
+        out: join(root, "templates.ts"),
+        copy: { default: "en", catalogs: { en: join(root, "copy", "en.json") } },
+      }),
+    ).resolves.toMatchObject({ written: true });
   });
 
   it("should take locale names that are not language tags at all", async () => {

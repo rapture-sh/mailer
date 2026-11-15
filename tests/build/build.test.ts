@@ -181,6 +181,26 @@ describe("what the build refuses", () => {
     });
   });
 
+  it("should take the letters as a list of files rather than a directory", async () => {
+    const out = await into();
+
+    const result = await build({
+      letters: [join(fixtures, "welcome.hbs"), join(fixtures, "layout.hbs")],
+      out,
+      copy,
+    });
+
+    expect(result.letters).toEqual(["welcome"]);
+  });
+
+  it("should import the package under whatever name it is installed as", async () => {
+    const out = await into();
+
+    await build({ letters: fixtures, out, copy, packageImport: "@acme/mail" });
+
+    expect(await readFile(out, "utf8")).toContain('import { defineTemplates } from "@acme/mail";');
+  });
+
   it("should refuse a directory with no letters in it", async () => {
     const empty = await mkdtemp(join(tmpdir(), "mailer-empty-"));
 

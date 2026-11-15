@@ -261,7 +261,7 @@ export function createMailer<
   const mailer = {
     provider: provider.name,
 
-    send: (args: LooseArgs): Promise<MailResult> => {
+    send: async (args: LooseArgs): Promise<MailResult> => {
       if (args.to === undefined || args.subject === undefined) {
         throw new Error("a message needs a reader and a subject");
       }
@@ -283,7 +283,7 @@ export function createMailer<
       return post(message, args);
     },
 
-    sendTemplate: (name: string, args: LooseArgs): Promise<MailResult> => {
+    sendTemplate: async (name: string, args: LooseArgs): Promise<MailResult> => {
       const letter = letters[name];
 
       if (letter === undefined) throw new Error(`no letter named '${name}'`);

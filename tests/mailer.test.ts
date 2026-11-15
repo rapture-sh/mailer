@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMailer } from "~/mailer";
 import { memory } from "~/providers/memory";
+import { defineTemplates, type NoFields } from "~/template";
 
 const ada = { email: "ada@example.com", name: "Ada" };
 
@@ -61,6 +62,48 @@ describe("createMailer", () => {
 
   it("should refuse to be built with no sender at all", () => {
     expect(() => createMailer({ provider: memory(), senders: {} })).toThrow(/at least one sender/);
+  });
+});
+
+describe("createMailer, what it refuses at send time", () => {
+  it("should refuse a letter naming a sender that was never declared", async () => {
+    // A generated letter's `from` is a plain string, which is why the build checks it
+    // against the senders. This is what happens when nothing did.
+    const mailer = createMailer({
+      provider: memory(),
+      senders: { auth: "Acme <auth@example.com>" },
+      templates: defineTemplates<{ stray: { addressed: "caller"; fields: NoFields } }>({
+        letters: {
+          stray: {
+            addressed: "caller",
+            from: "billing",
+            subject: "Hi",
+            html: () => "<p>Hi</p>",
+          },
+        },
+      }),
+    });
+
+    await expect(mailer.sendTemplate("stray", { to: ada })).rejects.toThrow(
+      /no sender named 'billing'/,
+    );
+  });
+
+  it("should refuse a copy key when no catalogs are configured", async () => {
+    const mailer = createMailer({
+      provider: memory(),
+      senders: { auth: "Acme <auth@example.com>" },
+      templates: ({ letter }) => ({
+        broken: letter({
+          subject: (_fields, { t }) => t("some.key"),
+          body: () => ({ text: "x" }),
+        }),
+      }),
+    });
+
+    await expect(mailer.sendTemplate("broken", { to: ada })).rejects.toThrow(
+      /no catalogs configured/,
+    );
   });
 });
 

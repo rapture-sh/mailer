@@ -14,11 +14,14 @@ driver, in code, in docs or in a commit message.
 
 It is part of [Rapture.sh](https://rapture.sh) and is MIT licensed.
 
-**What is in the tree right now.** Repository documents, agent conventions and the
-TypeScript project with Biome, Vitest, husky and the build are in place. The template
-registry, the typed send surface, the error normalisation, backoff and both providers are
-being built. Where this file names a module that has not landed, it is the contract for
-building it rather than code you can read, so check that a file exists before assuming
+**What is in the tree right now.** The toolchain, the send surface and both providers are
+built: `createMailer` with `send` and `sendTemplate`, typed senders, capability types, the
+result union, backoff, the `memory` provider and the `resend` provider with its error
+mapping and the base url guard, all covered by both test tiers. `example/` uses the package
+the way a caller does. Templates are declared by hand in the `templates` callback; the
+build step that reads them out of `.hbs` files, and the copy catalog that localises them,
+have no code yet. Where this file names a module that has not landed, it is the contract
+for building it rather than code you can read, so check that a file exists before assuming
 it.
 
 ## The rules that matter
@@ -42,9 +45,10 @@ it.
 5. **`send` does not throw for mail failures.** Everything a provider can answer becomes
    a `MailError` kind. Throwing is reserved for programmer error at construction, so a
    bad config or a missing template, where there is no result to return yet.
-6. **No runtime dependencies.** This runs inside Convex functions, edge runtimes and
-   Next server components, where every transitive dependency costs cold start. A provider
-   SDK is an optional peer dependency, never a dependency.
+6. **No runtime dependencies.** This runs inside Convex functions, edge runtimes and Next
+   server components, where every transitive dependency costs cold start. There are none
+   today: a provider posts to its API with `fetch`. If one ever genuinely needs an SDK,
+   that SDK is an optional peer dependency, never a dependency.
 7. **Nothing in this package sends real mail in a test.** Tests use the `memory`
    provider, or a stubbed fetch against the resend provider. No network, no API keys in
    the repo, no real recipient addresses anywhere.
@@ -53,12 +57,14 @@ it.
 
 - TypeScript, strict, ESM only, targeting Node 22+
 - `tsdown` for the build, with an explicit `exports` map
+- `tsx` to run `example/`, which imports the package by name through a tsconfig path
 - Biome for lint and format
 - Vitest for both tiers of tests, with `--typecheck` and `expectTypeOf` for the type tier
 - `publint` and `@arethetypeswrong/cli` against the built package
 - Changesets for versioning, `npm publish --provenance` from CI
-- `resend` as an optional peer dependency, and a dev dependency here so the provider can
-  be built and tested
+- No dependencies, runtime or peer. The `resend` provider posts to the documented HTTP API
+  rather than wrapping the SDK, so there is nothing to make optional and `baseUrl` is
+  certainly honoured
 
 ## Commands
 
@@ -75,6 +81,8 @@ pnpm test:types              # vitest --typecheck, the primary suite
 pnpm test:coverage           # vitest run --coverage
 pnpm build                   # tsdown, writes dist
 pnpm check:exports           # publint and attw against the built package
+pnpm example                 # every letter through the memory provider, no network
+pnpm example:mock            # the same letters at mock-resend, needs RESEND_BASE_URL
 pnpm changeset               # add a changeset for anything users notice
 ```
 
@@ -100,6 +108,11 @@ src/
 
 tests/                     mirrors src/, one file per source file
   types/                   the type tier, *.test-d.ts, run with vitest --typecheck
+
+example/                   a caller's application, run against src/ with tsx
+  letters.ts               the senders and the registry, shared by both scripts
+  offline.ts               every letter through the memory provider
+  mock-resend.ts           the same letters through resend, pointed at a mock
 ```
 
 Where things go:

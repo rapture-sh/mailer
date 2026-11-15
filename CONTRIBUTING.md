@@ -60,6 +60,22 @@ pnpm install
 pnpm test:watch
 ```
 
+`example/` is a small application that uses the package the way a caller does, against
+`src/` rather than a build. It is the quickest way to see a change from the outside, and it
+needs no key and no network:
+
+```bash
+pnpm example
+```
+
+For the `resend` provider, run [mock-resend](https://github.com/rapture-sh/mock-resend) and
+point the example at it. Development then exercises the provider code that runs in
+production, which is why this package ships no dev provider:
+
+```bash
+RESEND_BASE_URL=http://localhost:3000 pnpm example:mock
+```
+
 ## Checks
 
 Run this before opening a PR, and make sure it passes:
@@ -119,9 +135,11 @@ Default answer is no. This package has no runtime dependencies and that is a fea
 goes into Convex functions, edge runtimes and Next server components, where every
 transitive dependency is weight on a cold start.
 
-A provider SDK is an **optional peer dependency**, never a dependency. Installing
-`@rapture-sh/mailer` must not install `resend`. If a provider needs a new peer, say so in
-the PR description and add it to the `exports` map and the peer dependency meta.
+There are no dependencies at all today, runtime or peer, and the `resend` provider stays
+that way by posting to the documented HTTP API rather than wrapping the SDK. If a provider
+genuinely needs an SDK, it is an **optional peer dependency**, never a dependency:
+installing `@rapture-sh/mailer` must not install it. Say so in the PR description and add
+it to the `exports` map and the peer dependency meta.
 
 ## Commits
 

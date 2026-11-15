@@ -49,6 +49,8 @@
   },
   "scripts": {
     "build": "tsdown",
+    "example": "tsx example/offline.ts",
+    "example:mock": "tsx example/mock-resend.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:types && pnpm build && pnpm check:exports",
     "check:exports": "publint --strict && attw --pack . --profile esm-only",
     "lint": "biome check",
@@ -77,6 +79,7 @@
     "lint-staged": "^17.6.0",
     "publint": "^0.3.25",
     "tsdown": "^0.23.7",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "unrun": "^0.3.1",
     "vitest": "^5.1.0"

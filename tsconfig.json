@@ -23,8 +23,11 @@
 
     "noEmit": true,
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "@rapture-sh/mailer": ["./src/index.ts"],
+      "@rapture-sh/mailer/resend": ["./src/providers/resend.ts"],
+      "@rapture-sh/mailer/memory": ["./src/providers/memory.ts"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts", "*.mts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "example/**/*.ts", "*.ts", "*.mts"]
 }

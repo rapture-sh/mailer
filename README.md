@@ -9,13 +9,14 @@ compiler knows what every provider can and cannot do.
 schedule, passing `sendAt` is a compile error, not a 400 at runtime. That is the part
 nobody else does, and it is the reason this package exists.
 
-Written in TypeScript, ESM only, with no dependencies of its own. Providers are
-pluggable and the SDK behind one is an optional peer dependency, so installing this does
-not drag in a provider you never use.
+Written in TypeScript, ESM only, with no dependencies at all. Providers are pluggable, and
+both of the ones here need nothing installed alongside: the Resend provider posts to that
+API directly rather than wrapping its SDK.
 
-> **Status.** The repository scaffolding and conventions are in place. The template
-> registry, the typed send surface and the providers land in the commits that follow, and
-> this README is the contract they are built against.
+> **Status.** The send surface is built: `createMailer`, `send`, `sendTemplate`, typed
+> senders, capabilities, backoff, and both providers, with the guarantees below covered by
+> type tests. Templates are declared by hand for now; the build step that reads them out of
+> `.hbs` files, and the copy catalog that localises them, are next.
 
 It started inside the [Kywi](https://github.com/rapture-sh) monorepo, where sending mail
 was four hand-written wrapper functions over a `console.log` stub in
@@ -31,14 +32,8 @@ Install
 pnpm add @rapture-sh/mailer
 ```
 
-Node 22 or newer. The package is ESM only, which Node 22, Next and Convex all handle.
-
-A provider's SDK is an optional peer dependency. Install it alongside only if you use
-that provider:
-
-```bash
-pnpm add resend
-```
+Node 22 or newer. The package is ESM only, which Node 22, Next and Convex all handle, and
+it has no dependencies at all. Nothing else to install for either provider.
 
 
 The shape
@@ -164,9 +159,24 @@ disagrees with every other provider about what a retry means.
 Providers in v1
 ---------------
 
-**`resend(...)`** wraps the official [`resend`](https://resend.com/docs) SDK and passes
-`baseUrl` straight through, so the same provider code can point at anything speaking the
-Resend API.
+**`resend(...)`** posts to the documented
+[Resend HTTP API](https://resend.com/docs/api-reference/emails/send-email) and passes
+`baseUrl` straight through, so the same provider code can point at anything speaking that
+API. It declares attachments, scheduling, idempotency, reply-to and custom headers, and
+takes Resend's own tags, cc and bcc.
+
+It does not wrap the `resend` SDK. The brief asked for the SDK as an optional peer
+dependency, and dropping it turned out better on the same axis: there is no peer to make
+optional, nothing is dragged in, the `baseUrl` that makes mock-resend work is certain to be
+honoured, and the error mapping gets the raw status and body rather than an SDK's tidied
+`{ data, error }`. Kywi had already reached the same conclusion and dropped Resend's own
+Convex component for it.
+
+Two error kinds never come out of this provider, and that is deliberate. Resend answers
+`validation_error` for a bad address, a missing subject and an unverified sending domain
+alike, so promoting that to `InvalidRecipient` would have callers drop addresses that are
+fine; and a suppression is reported on a webhook rather than at send time, which is a
+non-goal here. Both arrive as `Unknown` with the payload kept.
 
 **`memory(...)`** collects messages in an array for tests. No network, synchronous
 assertions, a `sent` accessor and a `clear()`:
@@ -189,13 +199,19 @@ Local development
 -----------------
 
 There is deliberately **no local or dev provider.** For local work, point the `resend`
-provider at [mock-resend](https://github.com/rapture-sh/mock-resend) through `baseUrl`:
+provider at [mock-resend](https://github.com/rapture-sh/mock-resend) through `baseUrl`.
+mock-resend speaks the same HTTP API, keeps an inbox you can look at, and lets no mail
+leave your machine:
 
 ```ts
 resend({
   apiKey: "re_local",
   baseUrl: env.RESEND_BASE_URL,
 });
+```
+
+```bash
+RESEND_BASE_URL=http://localhost:3000 pnpm example:mock
 ```
 
 Development and CI then exercise the same provider code that runs in production, instead
@@ -237,6 +253,14 @@ pnpm install
 
 ```bash
 pnpm check
+```
+
+[example/](example/README.md) is a small application that uses the package the way a caller
+does, running against `src/` rather than a build, so it is the first thing to break when
+the public surface moves. It needs no key and no network:
+
+```bash
+pnpm example
 ```
 
 

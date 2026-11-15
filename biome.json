@@ -52,7 +52,7 @@
       }
     },
     {
-      "includes": ["tests/**"],
+      "includes": ["tests/**", "example/**"],
       "linter": {
         "rules": {
           "suspicious": {

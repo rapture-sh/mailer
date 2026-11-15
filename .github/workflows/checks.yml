@@ -66,6 +66,21 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:types
 
+  # The example imports the package by name and runs against src/, so it is the first
+  # thing to break when the public surface moves.
+  example:
+    name: Example
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm example
+
   # The published package, not the repository: publint reads the exports map and attw
   # proves the declarations resolve for consumers, neither of which the local tsc run
   # can tell us.

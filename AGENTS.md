@@ -160,8 +160,12 @@ behaving like the same mailer.
 
 ## Code style
 
-- Biome decides formatting; run `pnpm lint:fix` rather than arguing with it.
+- Biome decides formatting for code; run `pnpm lint:fix` rather than arguing with it.
+  Markdown is excluded from the formatter, so docs stay hand-wrapped at 90 columns and
+  keep the heading style they were written with.
 - Named exports (`export function createMailer()`), never default exports.
+- Inside `src/`, import relatively. Tests reach the source through the `~/` alias
+  (`~/mailer`), defined once in `tsconfig.json` and once in `vitest.config.mts`.
 - **No `any`, no `as`, no non-null `!`, no `@ts-expect-error` outside a type test** where
   asserting a compile failure is the point. A cast in `src/` is how a type guarantee dies
   quietly. If you cannot express it, say so in the PR rather than casting past it.

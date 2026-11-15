@@ -1,0 +1,85 @@
+{
+  "name": "@rapture-sh/mailer",
+  "version": "0.1.0",
+  "description": "Provider-agnostic, end-to-end type-safe mail for TypeScript, where a provider's capabilities are types rather than runtime flags.",
+  "keywords": [
+    "email",
+    "mail",
+    "typescript",
+    "type-safe",
+    "resend",
+    "templates",
+    "provider"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/rapture-sh/mailer#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rapture-sh/mailer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rapture-sh/mailer/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm test:types && pnpm build && pnpm check:exports",
+    "check:exports": "publint --strict && attw --pack . --profile esm-only",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:types": "vitest run --typecheck.only",
+    "test:coverage": "vitest run --coverage",
+    "changeset": "changeset",
+    "release": "pnpm build && changeset publish",
+    "prepare": "husky"
+  },
+  "packageManager": "pnpm@10.23.0",
+  "lint-staged": {
+    "*.{ts,mts,js,mjs,cjs,json,jsonc}": "biome format --write --no-errors-on-unmatched"
+  },
+  "peerDependencies": {
+    "resend": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "resend": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@biomejs/biome": "^2.6.8",
+    "@changesets/cli": "^3.0.3",
+    "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "publint": "^0.3.25",
+    "resend": "^6.38.1",
+    "tsdown": "^0.23.7",
+    "typescript": "^7.0.2",
+    "unrun": "^0.3.1",
+    "vitest": "^5.1.0"
+  }
+}

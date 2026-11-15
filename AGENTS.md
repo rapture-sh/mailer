@@ -166,9 +166,15 @@ behaving like the same mailer.
 - Named exports (`export function createMailer()`), never default exports.
 - Inside `src/`, import relatively. Tests reach the source through the `~/` alias
   (`~/mailer`), defined once in `tsconfig.json` and once in `vitest.config.mts`.
-- **No `any`, no `as`, no non-null `!`, no `@ts-expect-error` outside a type test** where
-  asserting a compile failure is the point. A cast in `src/` is how a type guarantee dies
-  quietly. If you cannot express it, say so in the PR rather than casting past it.
+- **No `any`, no non-null `!`, and no `@ts-expect-error` in `src/`.** In a type test
+  `@ts-expect-error` is the assertion and that is where it belongs.
+- **`as` is allowed in exactly one kind of place**: the boundary inside a factory where an
+  implementation written against loose internal shapes is handed back under its generic
+  public type. A body cannot be written generically over a provider's capabilities and a
+  caller's registry, so `createMailer` has that boundary, it is commented, and
+  `tests/types/` is what proves the public side of it. At most one such boundary per
+  factory. Anywhere else a cast is how a type guarantee dies quietly, so if you cannot
+  express it, say so in the pull request rather than casting past it.
 - Prefer `unknown` with narrowing, `satisfies` over an annotation that widens, and a
   discriminated union over an optional field that is only sometimes meaningful.
 - Generic parameters are named for what they hold: `TTemplates`, `TFields`, `TCapability`.

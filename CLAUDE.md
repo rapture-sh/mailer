@@ -16,9 +16,11 @@ Everything in `AGENTS.md` applies. The points worth repeating:
   `src/retry.ts` and reads the error kind, not the provider.
 - **`send` does not throw for mail failures.** Every provider answer becomes a
   `MailError` kind. Throwing is only for programmer error at construction.
-- **No `any`, no `as`, no non-null `!`, no `@ts-expect-error` in `src/`.** In a type test
+- **No `any`, no non-null `!`, no `@ts-expect-error` in `src/`.** In a type test
   `@ts-expect-error` is the assertion, and it gets a comment saying what should have
-  failed.
+  failed. `as` is allowed only at a factory's facade boundary, where a loose
+  implementation is handed back under its generic public type, commented and covered by
+  type tests. `createMailer` has one. Do not add another anywhere else.
 - **The word is `provider`.** Never transport, sink, adapter or driver.
 - **No runtime dependencies.** A provider SDK is an optional peer dependency.
 - **Type tests are the primary suite.** `tests/types/*.test-d.ts` under

@@ -27,6 +27,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./memory": {
+      "types": "./dist/providers/memory.d.ts",
+      "import": "./dist/providers/memory.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

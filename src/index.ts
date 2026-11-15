@@ -1,7 +1,9 @@
-/**
- * The public surface of @rapture-sh/mailer.
- *
- * Nothing is exported yet. The template registry, the typed send surface and both
- * providers land in the commits that follow, and each is re-exported from here.
- */
-export {};
+export {
+  isTransient,
+  type MailError,
+  type MailErrorKind,
+  type MailErrorOf,
+  type MailResult,
+  type TransientMailError,
+  type TransientMailErrorKind,
+} from "./result";

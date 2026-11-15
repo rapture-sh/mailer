@@ -218,6 +218,88 @@ as a field, so the localisation helpers (`t`, and formatting for dates, money an
 announce themselves as missing until they land.
 
 
+Localisation
+------------
+
+The copy is your own JSON, wherever it lives and whatever you call your locales. Hand the
+build the files and it reads them:
+
+```ts
+await build({
+  letters: "emails",
+  out: "mailer/templates.ts",
+  senders: ["auth", "notifications"],
+  copy: {
+    default: "en-GB",
+    catalogs: {
+      "en-GB": "./locales/email/en-GB.json",
+      "de-Test-CH": "./i18n/weird/place/german.json",
+      pirate: "./copy/pirate.json",
+    },
+    // Values every key may use without being passed them, for the links in every
+    // closing. Yours, so they go in as written; a caller's values are escaped.
+    values: { supportLink: '<a href="mailto:support@example.com">support</a>' },
+  },
+});
+```
+
+**The locale names are the keys of that map and nothing parses them.** `de`, `de-CH`,
+`de-Test-CH`, `pirate` and `internal-debug-9` are all equally fine. A name reaches `Intl`
+when something is formatted, and one it cannot read falls back to the default locale rather
+than failing to send. A directory works too, where each file's name is its locale:
+
+```ts
+copy: { default: "en-GB", catalogs: "./locales/email" }
+```
+
+In a letter, four helpers come with the catalogs:
+
+```hbs
+---
+from: auth
+subject:
+  key: magic-code.subject
+sample:
+  code: "519204"
+---
+{{#> layout heading=(t "magic-code.heading") }}
+  <p>{{ t "greeting.named" displayName=reader.name }}</p>
+  <p>{{ t "magic-code.body" }}</p>
+  <p>{{ date startsAt zone=timezone style="long" }}</p>
+  <p>{{ t "booking.paid" totalAmount=(money totalMinor currency) }}</p>
+  <p>{{ list tickets }}</p>
+{{/layout}}
+```
+
+`t` takes a key and the values that key asks for. `date`, `time`, `dateTime`, `money` and
+`list` are `Intl`, in the reader's locale, and they type their arguments: `startsAt`
+becomes `number | Date`, `totalMinor` a `number`, `tickets` a `readonly string[]`. The zone
+is passed rather than assumed, because a guest abroad still turns up at ten.
+
+A subject can be a copy key instead of a line of text, written as `subject: { key: ... }`,
+and its placeholders are taken from fields of the same name. That is also the end of
+reading a subject back out of the rendered `<title>` with a regex.
+
+The build is what makes it safe, and every message names a file:
+
+| Refused at build time |
+| --- |
+| a key no catalog has |
+| a translation missing a key the default locale has |
+| two catalogs disagreeing about the placeholders inside one key, so `{otp}` cannot become `{code}` in one language |
+| a key needing a value nobody passed, or passed a value it has no placeholder for |
+| `t` at all when no catalogs are configured |
+| a key that is not written out, since a computed one cannot be checked |
+
+Two things reach the types: the locale union, so `to: { locale: "de-DE" }` does not compile
+when there is no `de-DE.json`, and the reader has no `locale` at all on the raw `send`
+path, because a message you rendered yourself is already in a language.
+
+One rule holds at render time: **the copy is yours and a value is not.** A sentence may
+carry markup and it is left alone; a value filled into it is escaped. A key missing from a
+reader's locale falls back to the default one.
+
+
 Retries
 -------
 

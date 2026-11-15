@@ -1,4 +1,5 @@
 import type { Capability, MessageOptions } from "./capabilities";
+import { type CopyConfig, formattersFor, type LocaleOf, translate } from "./copy";
 import type { Attachment, MailMessage, Recipient } from "./message";
 import type { CapabilitiesOf, OptionsOf, Provider, SomeProvider } from "./provider";
 import type { MailResult } from "./result";
@@ -32,15 +33,33 @@ export type SendArgs<
 
 type FieldsArg<TFields> = keyof TFields extends never ? { fields?: TFields } : { fields: TFields };
 
-type ToArg<TLetter> = TLetter extends { addressed: "inbox" }
-  ? { to?: Recipient }
-  : { to: Recipient };
+/**
+ * The letters, whether they were handed over on their own or beside their copy. A letter
+ * actually named `letters` is told apart by being letter shaped.
+ */
+export type LettersIn<TRegistry> = TRegistry extends { letters: infer TLetters }
+  ? TLetters
+  : TRegistry;
+
+type CopyIn<TRegistry> = TRegistry extends { copy?: infer TCopy } ? NonNullable<TCopy> : never;
+
+export type LocaleIn<TRegistry> = LocaleOf<CopyIn<TRegistry>>;
+
+/** A reader carries a locale only where there are catalogs to read it against. */
+export type Reader<TLocale extends string> = [TLocale] extends [never]
+  ? Recipient
+  : Recipient & { locale?: TLocale };
+
+type ToArg<TLetter, TLocale extends string> = TLetter extends { addressed: "inbox" }
+  ? { to?: Reader<TLocale> }
+  : { to: Reader<TLocale> };
 
 export type SendTemplateArgs<
   TLetter,
+  TLocale extends string,
   TCapabilities extends Capability,
   TOptions extends object,
-> = ToArg<TLetter> &
+> = ToArg<TLetter, TLocale> &
   FieldsArg<FieldsOf<TLetter>> &
   MessageOptions<TCapabilities> &
   Partial<TOptions>;
@@ -52,14 +71,18 @@ export type MailerConfig<
   // builder call a contextual return type, and TypeScript then infers the fields from the
   // constraint instead of from the type argument. The builder is the only way to make a
   // letter, so nothing is lost.
-  TLetters extends Record<string, object>,
+  TRegistry extends object,
 > = {
   provider: TProvider;
   /** Every address this mailer may send from, by name. A letter names one of these keys. */
   senders: TSenders;
   /** The sender for a letter that names none. Required once there is more than one. */
   from?: keyof TSenders & string;
-  templates?: (build: LetterBuilder<keyof TSenders & string>) => TLetters;
+  /**
+   * The letters, either on their own or as `{ letters, copy }` where they are
+   * localised. A generated module exports exactly that.
+   */
+  templates?: (build: LetterBuilder<keyof TSenders & string>) => TRegistry;
   retry?: Partial<Retry>;
 };
 
@@ -69,18 +92,23 @@ export type MailerConfig<
  */
 export type Mailer<
   TSender extends string,
-  TLetters,
+  TRegistry,
   TCapabilities extends Capability,
   TOptions extends object,
 > = {
   readonly provider: string;
   send(args: SendArgs<TSender, TCapabilities, TOptions>): Promise<MailResult>;
-} & (keyof TLetters extends never
+} & (keyof LettersIn<TRegistry> extends never
   ? Record<never, never>
   : {
-      sendTemplate<TName extends keyof TLetters & string>(
+      sendTemplate<TName extends keyof LettersIn<TRegistry> & string>(
         name: TName,
-        args: SendTemplateArgs<TLetters[TName], TCapabilities, TOptions>,
+        args: SendTemplateArgs<
+          LettersIn<TRegistry>[TName],
+          LocaleIn<TRegistry>,
+          TCapabilities,
+          TOptions
+        >,
       ): Promise<MailResult>;
     });
 
@@ -95,9 +123,13 @@ type LooseLetter = {
   replyTo?: (fields: LooseFields, context: RenderContext) => string;
 };
 
+type LooseRegistry =
+  | Record<string, LooseLetter>
+  | { letters: Record<string, LooseLetter>; copy?: CopyConfig };
+
 type LooseArgs = Record<string, unknown> & {
   from?: string;
-  to?: Recipient;
+  to?: Recipient & { locale?: string };
   subject?: string;
   html?: string;
   text?: string;
@@ -113,7 +145,7 @@ type LooseConfig = {
   provider: Provider<Capability, Record<string, unknown>>;
   senders: Record<string, string>;
   from?: string;
-  templates?: (build: LetterBuilder<string>) => Record<string, LooseLetter>;
+  templates?: (build: LetterBuilder<string>) => LooseRegistry;
   retry?: Partial<Retry>;
 };
 
@@ -142,13 +174,25 @@ function providerOptions(args: LooseArgs): Record<string, unknown> {
   return options;
 }
 
+/** A registry that keeps its letters under `letters`, rather than being them. */
+function isWrapped(
+  registry: LooseRegistry,
+): registry is { letters: Record<string, LooseLetter>; copy?: CopyConfig } {
+  if (!("letters" in registry)) return false;
+
+  const letters: unknown = Reflect.get(registry, "letters");
+
+  // A letter of its own called `letters` is letter shaped, so it is not the wrapper.
+  return typeof letters === "object" && letters !== null && !("addressed" in letters);
+}
+
 export function createMailer<
   const TProvider extends SomeProvider,
   const TSenders extends Senders,
-  const TLetters extends Record<string, object> = NoLetters,
+  const TRegistry extends object = NoLetters,
 >(
-  config: MailerConfig<TProvider, TSenders, TLetters>,
-): Mailer<keyof TSenders & string, TLetters, CapabilitiesOf<TProvider>, OptionsOf<TProvider>> {
+  config: MailerConfig<TProvider, TSenders, TRegistry>,
+): Mailer<keyof TSenders & string, TRegistry, CapabilitiesOf<TProvider>, OptionsOf<TProvider>> {
   // The two assertions in this function are the boundary between a public type that
   // depends on the provider and the registry, and an implementation that cannot be
   // written generically over either. They are the only ones in src/, and the type tests
@@ -166,7 +210,10 @@ export function createMailer<
     );
   }
 
-  const letters = loose.templates?.(letterBuilder()) ?? {};
+  const registry: LooseRegistry = loose.templates?.(letterBuilder()) ?? {};
+  const wrapped = isWrapped(registry);
+  const letters: Record<string, LooseLetter> = wrapped ? registry.letters : registry;
+  const copy = wrapped ? registry.copy : undefined;
   const retry: Retry = { ...defaultRetry, ...loose.retry };
   const provider = loose.provider;
 
@@ -237,13 +284,29 @@ export function createMailer<
       if (to === undefined) throw new Error(`a '${name}' letter needs a reader`);
 
       const fields = args.fields ?? {};
-      const context: RenderContext = { reader: to };
+      const reader: Recipient = {
+        email: to.email,
+        ...(to.name === undefined ? {} : { name: to.name }),
+      };
+      const locale = to.locale ?? copy?.default ?? "";
+      const context: RenderContext = {
+        reader,
+        locale,
+        t: (key, values) => {
+          if (copy === undefined) {
+            throw new Error(`a letter asked for the copy key '${key}' with no catalogs configured`);
+          }
+
+          return translate(copy, locale, key, values);
+        },
+        ...formattersFor(locale, copy?.default ?? locale),
+      };
       const subject =
         typeof letter.subject === "string" ? letter.subject : letter.subject(fields, context);
 
       const message = compose(
         addressFor(letter.from ?? fallback),
-        to,
+        reader,
         subject,
         letter.body(fields, context),
         letter.replyTo?.(fields, context),
@@ -256,7 +319,7 @@ export function createMailer<
 
   return mailer as unknown as Mailer<
     keyof TSenders & string,
-    TLetters,
+    TRegistry,
     CapabilitiesOf<TProvider>,
     OptionsOf<TProvider>
   >;

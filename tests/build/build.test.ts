@@ -13,9 +13,15 @@ async function into(): Promise<string> {
   return join(directory, "templates.ts");
 }
 
+const copy = {
+  default: "en-GB",
+  catalogs: join(fixtures, "locales"),
+  values: { supportLink: '<a href="mailto:support@example.com">support@example.com</a>' },
+};
+
 async function run(options: { senders?: readonly string[] } = {}) {
   const out = await into();
-  const result = await build({ letters: fixtures, out, ...options });
+  const result = await build({ letters: fixtures, out, copy, ...options });
   const module = await readFile(result.out, "utf8");
   const bodies = await readFile(result.bodiesOut, "utf8");
 
@@ -41,8 +47,8 @@ describe("build", () => {
   it("should write nothing the second time, because nothing changed", async () => {
     const out = await into();
 
-    await build({ letters: fixtures, out });
-    const second = await build({ letters: fixtures, out });
+    await build({ letters: fixtures, out, copy });
+    const second = await build({ letters: fixtures, out, copy });
 
     expect(second).toMatchObject({ written: false, stale: false });
   });
@@ -51,7 +57,7 @@ describe("build", () => {
     const out = await into();
 
     await writeFile(out, "// out of date\n", "utf8");
-    const result = await build({ letters: fixtures, out, check: true });
+    const result = await build({ letters: fixtures, out, copy, check: true });
 
     expect([result.stale, result.written, await readFile(out, "utf8")]).toEqual([
       true,
@@ -76,7 +82,7 @@ describe("the module it writes", () => {
 
   it("should import defineTemplates and the bodies beside it", () => {
     expect(module).toContain('import { defineTemplates } from "@rapture-sh/mailer";');
-    expect(module).toContain('import { bodies } from "./templates.bodies";');
+    expect(module).toContain('import { bodies, copy } from "./templates.bodies";');
   });
 
   it("should read a field off a placeholder in the body", () => {
@@ -95,13 +101,26 @@ describe("the module it writes", () => {
 
   it("should read an each block as rows and an if block as optional", () => {
     expect(module).toContain(
-      '"booking": { addressed: "caller"; fields: { activityName: string; participants: number; reference: string; tickets: readonly { name: string; quantity: string }[]; voucherCode?: string } };',
+      '"booking": { addressed: "caller"; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };',
     );
   });
 
   it("should turn a subject with a placeholder into a function of the fields", () => {
-    // biome-ignore lint/suspicious/noTemplateCurlyInString: generated source, not a literal
-    expect(module).toContain("subject: (fields) => `Your code is ${fields.code}`,");
+    expect(module).toContain(
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: generated source, not a literal
+      "subject: (fields) => `Your booking for ${fields.activityName} is confirmed`,",
+    );
+  });
+
+  it("should resolve a subject written as a copy key through t", () => {
+    expect(module).toContain(
+      'subject: (fields, { t }) => t("magic-code.subject", { code: fields.code }),',
+    );
+  });
+
+  it("should carry the locales and the catalogs", () => {
+    expect(module).toContain("export type Locale = keyof typeof copy.catalogs;");
+    expect(module).toContain("defineTemplates<Letters, typeof copy>({");
   });
 
   it("should leave a subject with no placeholder as a string", () => {
@@ -183,12 +202,28 @@ describe("what the build refuses", () => {
 
 describe("the module as a consumer gets it", () => {
   it("should be exactly what is committed under generated/", async () => {
-    const { module, bodies } = await run({ senders: ["auth", "notifications"] });
-
-    // Those files are typechecked by tsc and rendered by tests/build/generated.test.ts, so
+    // The committed output is typechecked by tsc and rendered by generated.test.ts, so
     // this asserts three things at once: the output is reproducible, it compiles, and it
-    // works.
-    await expect(module).toMatchFileSnapshot("./generated/templates.ts");
-    await expect(bodies).toMatchFileSnapshot("./generated/templates.bodies.ts");
+    // works. A fixture change rewrites it and fails once, the way a snapshot does.
+    const result = await build({
+      letters: fixtures,
+      out: fileURLToPath(new URL("./generated/templates.ts", import.meta.url)),
+      copy,
+      senders: ["auth", "notifications"],
+    });
+
+    expect([result.written, result.stale]).toEqual([false, false]);
+  });
+
+  it("should report the keys no letter asked for", async () => {
+    const { result } = await run();
+
+    expect(result.unusedKeys).toEqual(["unused.key"]);
+  });
+
+  it("should report the locales it read", async () => {
+    const { result } = await run();
+
+    expect(result.locales).toEqual(["de-CH", "en-GB", "pirate-Speak"]);
   });
 });

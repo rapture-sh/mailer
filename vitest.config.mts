@@ -10,6 +10,9 @@ export default defineConfig({
       "@rapture-sh/mailer/resend": fileURLToPath(
         new URL("./src/providers/resend.ts", import.meta.url),
       ),
+      "@rapture-sh/mailer/handlebars": fileURLToPath(
+        new URL("./src/handlebars.ts", import.meta.url),
+      ),
       "@rapture-sh/mailer/memory": fileURLToPath(
         new URL("./src/providers/memory.ts", import.meta.url),
       ),

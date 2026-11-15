@@ -1,0 +1,10 @@
+{
+  "greeting.named": "Hallo {displayName},",
+  "magic-code.subject": "Dein Code ist {code}",
+  "magic-code.heading": "Anmelden",
+  "magic-code.body": "Gib diesen Code ein, um die Anmeldung abzuschliessen. Er läuft in <b>10 Minuten</b> ab.",
+  "magic-code.closing": "Falls du dich nicht anmelden wolltest, schreib an {supportLink}.",
+  "booking.intro": "Deine Buchung für <strong>{activityName}</strong> ist für {participantCount} Personen bestätigt.",
+  "booking.paid": "Du hast {totalAmount} bezahlt.",
+  "unused.key": "Danach fragt niemand."
+}

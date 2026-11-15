@@ -11,6 +11,7 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
   entry: [
     "src/index.ts",
+    "src/handlebars.ts",
     "src/providers/resend.ts",
     "src/providers/memory.ts",
     "src/build/index.ts",

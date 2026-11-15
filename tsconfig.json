@@ -25,6 +25,7 @@
     "paths": {
       "~/*": ["./src/*"],
       "@rapture-sh/mailer": ["./src/index.ts"],
+      "@rapture-sh/mailer/handlebars": ["./src/handlebars.ts"],
       "@rapture-sh/mailer/resend": ["./src/providers/resend.ts"],
       "@rapture-sh/mailer/memory": ["./src/providers/memory.ts"]
     }

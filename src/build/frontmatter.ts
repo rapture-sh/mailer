@@ -11,11 +11,18 @@ export function asRecord(value: unknown): Record<string, unknown> | undefined {
   return record;
 }
 
+/**
+ * A subject is either written out, where `{field}` placeholders are filled in, or a copy
+ * key, written as `subject: { key: welcome.subject }`. Which one it is comes from how it
+ * was written rather than from guessing at the shape of the string.
+ */
+export type HeaderSubject = { text: string } | { key: string };
+
 export type LetterHeader = {
   from: string | undefined;
   /** Present for a letter that comes to us, which is then addressed without a caller. */
   inbox: string | undefined;
-  subject: string;
+  subject: HeaderSubject;
   /** The name of the field holding a reply address. */
   replyTo: string | undefined;
   /** Field name to the TypeScript type written for it, which always beats inference. */
@@ -77,6 +84,17 @@ function asTypes(value: unknown): Record<string, string> {
   return types;
 }
 
+function asSubject(value: unknown): HeaderSubject {
+  if (typeof value === "string") return { text: value };
+
+  const record = asRecord(value);
+  const key = record?.key;
+
+  if (typeof key === "string") return { key };
+
+  throw new Error("subject has to be a line of text, or a copy key as { key: some.key }");
+}
+
 export function parseHeader(yaml: string): LetterHeader {
   const parsed: unknown = parseYaml(yaml === "" ? "{}" : yaml);
   const record = asRecord(parsed);
@@ -100,7 +118,7 @@ export function parseHeader(yaml: string): LetterHeader {
   return {
     from: record.from === undefined ? undefined : asString(record.from, "from"),
     inbox: record.inbox === undefined ? undefined : asString(record.inbox, "inbox"),
-    subject: asString(record.subject, "subject"),
+    subject: asSubject(record.subject),
     replyTo:
       record["reply-to"] === undefined ? undefined : asString(record["reply-to"], "reply-to"),
     fields: record.fields === undefined ? {} : asTypes(record.fields),

@@ -6,18 +6,19 @@ fields:
 sample:
   activityName: Kayak tour, Lake Thun
   participants: 3
-  reference: REF-4182
+  startsAt: 2026-07-02T08:00:00.000Z
+  timezone: Europe/Zurich
+  totalMinor: 12500
+  currency: CHF
   tickets:
-    - name: Adult
-      quantity: "2"
+    - 2 Adult
+    - 1 Child
 ---
 {{#> layout heading="Booking confirmed" }}
-  <p>{{ activityName }}, {{ participants }} people, reference {{ reference }}.</p>
-  <ul>
-    {{#each tickets}}
-      <li>{{ quantity }} {{ name }}</li>
-    {{/each}}
-  </ul>
+  <p>{{ t "booking.intro" activityName=activityName participantCount=participants }}</p>
+  <p>{{ date startsAt zone=timezone style="long" }}</p>
+  <p>{{ list tickets }}</p>
+  <p>{{ t "booking.paid" totalAmount=(money totalMinor currency) }}</p>
   {{#if voucherCode}}
     <p>Voucher {{ voucherCode }} applied.</p>
   {{/if}}

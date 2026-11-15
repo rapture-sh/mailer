@@ -22,8 +22,11 @@ const ada = { email: "ada@example.com", name: "Ada" };
 const booking = {
   activityName: "Kayak tour, Lake Thun",
   participants: 3,
-  reference: "REF-4182",
-  tickets: [{ name: "Adult", quantity: "2" }],
+  startsAt: new Date("2026-07-02T08:00:00.000Z"),
+  timezone: "Europe/Zurich",
+  tickets: ["2 Adult", "1 Child"],
+  totalMinor: 12_500,
+  currency: "CHF",
 };
 
 describe("a generated registry", () => {
@@ -38,7 +41,9 @@ describe("a generated registry", () => {
   });
 
   it("should take the field as the type the body implies", async () => {
-    expectTypeOf(templates()["magic-code"].body).parameter(0).toEqualTypeOf<{ code: string }>();
+    expectTypeOf(templates().letters["magic-code"].body)
+      .parameter(0)
+      .toEqualTypeOf<{ code: string }>();
   });
 
   it("should take no fields for a letter with no placeholders", async () => {
@@ -67,11 +72,49 @@ describe("a generated registry", () => {
     });
   });
 
-  it("should take the shape an each block implies for its rows", async () => {
+  it("should read a field's type off the helper the body passes it to", async () => {
     await mailer.sendTemplate("booking", {
       to: ada,
-      // @ts-expect-error the each block reads name and quantity off every row
+      // @ts-expect-error money takes minor units, so totalMinor is a number
+      fields: { ...booking, totalMinor: "125.00" },
+    });
+  });
+
+  it("should take a moment as a Date or an epoch", async () => {
+    await mailer.sendTemplate("booking", {
+      to: ada,
+      fields: { ...booking, startsAt: 1_782_000_000_000 },
+    });
+
+    await mailer.sendTemplate("booking", {
+      to: ada,
+      // @ts-expect-error date takes a moment, not a written out timestamp
+      fields: { ...booking, startsAt: "2026-07-02" },
+    });
+  });
+
+  it("should take a list as strings", async () => {
+    await mailer.sendTemplate("booking", {
+      to: ada,
+      // @ts-expect-error list joins strings, so a row object is not one
       fields: { ...booking, tickets: [{ name: "Adult" }] },
     });
+  });
+});
+
+describe("the locales the catalogs declare", () => {
+  it("should take a locale a catalog is named after", async () => {
+    await mailer.sendTemplate("welcome", { to: { ...ada, locale: "de-CH" } });
+    await mailer.sendTemplate("welcome", { to: { ...ada, locale: "pirate-Speak" } });
+  });
+
+  it("should refuse a locale with no catalog, however reasonable it looks", async () => {
+    // @ts-expect-error there is no de-DE.json
+    await mailer.sendTemplate("welcome", { to: { ...ada, locale: "de-DE" } });
+  });
+
+  it("should have no locale on a message rendered elsewhere", async () => {
+    // @ts-expect-error a raw send is already in a language
+    await mailer.send({ to: { ...ada, locale: "de-CH" }, subject: "Hi", text: "Hi" });
   });
 });

@@ -4,9 +4,9 @@ import { memory } from "~/providers/memory";
 import { templates } from "./generated/templates";
 
 /**
- * The generated module, used exactly as a caller would: handed to `createMailer` and sent
- * through. The fixtures under `fixtures/` produced it, `tsc` checks it, and these tests
- * render it, so the whole path from a letter file to a posted message is covered.
+ * The generated module, used exactly as a caller would. The fixtures under `fixtures/`
+ * produced it, `tsc` checks it, and these tests render it, so the whole path from a letter
+ * file and three catalogs to a posted message is covered.
  */
 function setup() {
   const provider = memory();
@@ -29,37 +29,20 @@ const ada = { email: "ada@example.com", name: "Ada" };
 const booking = {
   activityName: "Kayak tour, Lake Thun",
   participants: 3,
-  reference: "REF-4182",
-  tickets: [{ name: "Adult", quantity: "2" }],
+  startsAt: new Date("2026-07-02T08:00:00.000Z"),
+  timezone: "Europe/Zurich",
+  tickets: ["2 Adult", "1 Child"],
+  totalMinor: 12_500,
+  currency: "CHF",
 };
 
 describe("a generated letter", () => {
-  it("should build its subject from the placeholder in its header", async () => {
-    const { provider, mailer } = setup();
-
-    await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
-
-    expect(provider.sent[0]?.subject).toBe("Your code is 519204");
-  });
-
   it("should send from the sender its header names", async () => {
     const { provider, mailer } = setup();
 
     await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
 
     expect(provider.sent[0]?.from).toBe("Acme <auth@example.com>");
-  });
-
-  it("should render the body, the fields and the reader through the partial", async () => {
-    const { provider, mailer } = setup();
-
-    await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
-
-    const html = provider.sent[0]?.html ?? "";
-
-    expect(html).toContain("<h1>Sign in</h1>");
-    expect(html).toContain("Hi Ada,");
-    expect(html).toContain("<b>519204</b>");
   });
 
   it("should fall back to the default sender when the header names none", async () => {
@@ -90,26 +73,6 @@ describe("a generated letter", () => {
     expect(provider.sent[0]?.replyTo).toBe("host@example.com");
   });
 
-  it("should render each row of a repeated field", async () => {
-    const { provider, mailer } = setup();
-
-    await mailer.sendTemplate("booking", {
-      to: ada,
-      fields: {
-        ...booking,
-        tickets: [
-          { name: "Adult", quantity: "2" },
-          { name: "Child", quantity: "1" },
-        ],
-      },
-    });
-
-    const html = provider.sent[0]?.html ?? "";
-
-    expect(html).toContain("<li>2 Adult</li>");
-    expect(html).toContain("<li>1 Child</li>");
-  });
-
   it("should leave out a conditional block when its field is absent", async () => {
     const { provider, mailer } = setup();
 
@@ -128,18 +91,129 @@ describe("a generated letter", () => {
 
     expect(provider.sent[0]?.html).toContain("Voucher SPRING26 applied.");
   });
+});
 
-  it("should escape a field, because a letter is html", async () => {
+describe("the copy", () => {
+  it("should take the subject from the key the header names", async () => {
     const { provider, mailer } = setup();
 
-    await mailer.sendTemplate("booking", {
-      to: ada,
-      fields: { ...booking, activityName: "Kayak <script>alert(1)</script>" },
+    await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
+
+    expect(provider.sent[0]?.subject).toBe("Your code is 519204");
+  });
+
+  it("should write the whole letter in the reader's locale", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("magic-code", {
+      to: { ...ada, locale: "de-CH" },
+      fields: { code: "519204" },
+    });
+
+    const sent = provider.sent[0];
+
+    expect(sent?.subject).toBe("Dein Code ist 519204");
+    expect(sent?.html).toContain("<h1>Anmelden</h1>");
+    expect(sent?.html).toContain("Hallo Ada,");
+    expect(sent?.html).toContain("Anmeldung abzuschliessen");
+  });
+
+  it("should take a locale called whatever its catalog is called", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("magic-code", {
+      to: { ...ada, locale: "pirate-Speak" },
+      fields: { code: "519204" },
+    });
+
+    const sent = provider.sent[0];
+
+    expect(sent?.subject).toBe("Yer code be 519204");
+    expect(sent?.html).toContain("Ahoy Ada,");
+  });
+
+  it("should leave markup in the copy alone, because the copy is ours", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
+
+    expect(provider.sent[0]?.html).toContain("<b>10 minutes</b>");
+  });
+
+  it("should escape a value put into the copy, because a value is not ours", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("magic-code", {
+      to: { email: "ada@example.com", name: "<script>alert(1)</script>" },
+      fields: { code: "519204" },
     });
 
     const html = provider.sent[0]?.html ?? "";
 
-    expect(html).toContain("Kayak &lt;script&gt;");
+    expect(html).toContain("&lt;script&gt;");
     expect(html).not.toContain("<script>");
+  });
+
+  it("should fill in a value every key may use without being passed it", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
+
+    expect(provider.sent[0]?.html).toContain(
+      '<a href="mailto:support@example.com">support@example.com</a>',
+    );
+  });
+});
+
+describe("the formatters", () => {
+  it("should write the day in the reader's language and the activity's zone", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", { to: ada, fields: booking });
+
+    // 08:00 UTC is a July day in Zurich, named the way en-GB names it.
+    expect(provider.sent[0]?.html).toContain("2 July 2026");
+  });
+
+  it("should write the same day the way another locale names it", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", {
+      to: { ...ada, locale: "de-CH" },
+      fields: booking,
+    });
+
+    expect(provider.sent[0]?.html).toContain("2. Juli 2026");
+  });
+
+  it("should turn minor units into the reader's currency format", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", { to: ada, fields: booking });
+
+    // Intl separates the currency from the amount with a non-breaking space, which is
+    // correct in a letter and invisible in a diff.
+    const html = (provider.sent[0]?.html ?? "").replaceAll(" ", " ");
+
+    expect(html).toContain("You paid CHF 125.00.");
+  });
+
+  it("should join a list the way the language joins one", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", { to: ada, fields: booking });
+
+    expect(provider.sent[0]?.html).toContain("2 Adult and 1 Child");
+  });
+
+  it("should join the same list with the other language's word", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", {
+      to: { ...ada, locale: "de-CH" },
+      fields: booking,
+    });
+
+    expect(provider.sent[0]?.html).toContain("2 Adult und 1 Child");
   });
 });

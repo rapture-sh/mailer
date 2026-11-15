@@ -1,10 +1,13 @@
 ---
 from: auth
-subject: Your code is {code}
+subject:
+  key: magic-code.subject
 sample:
   code: "519204"
 ---
-{{#> layout heading="Sign in" }}
-  <p>Hi {{ reader.name }},</p>
-  <p>Your code is <b>{{ code }}</b>.</p>
+{{#> layout heading=(t "magic-code.heading") }}
+  <p>{{ t "greeting.named" displayName=reader.name }}</p>
+  <p>{{ t "magic-code.body" }}</p>
+  <p><b>{{ code }}</b></p>
+  <p>{{ t "magic-code.closing" }}</p>
 {{/layout}}

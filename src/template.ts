@@ -1,3 +1,4 @@
+import type { CopyConfig, CopyValues, Formatters } from "./copy";
 import type { Recipient } from "./message";
 
 export type Rendered = {
@@ -5,10 +6,20 @@ export type Rendered = {
   text?: string;
 };
 
-/** What a body is given besides its own fields. */
+export type Translate = (key: string, values?: CopyValues) => string;
+
+/**
+ * What a body is given besides its own fields: who is reading, which locale they are
+ * reading in, the copy, and the formatters already bound to that locale.
+ *
+ * `t` needs a catalog. Without one it throws, which the build step makes unreachable by
+ * refusing a letter that calls `t` when no copy is configured.
+ */
 export type RenderContext = {
   readonly reader: Recipient;
-};
+  readonly locale: string;
+  readonly t: Translate;
+} & Formatters;
 
 export type NoFields = Record<never, never>;
 
@@ -92,7 +103,7 @@ export type GeneratedLetter<TFields> = {
   /** Where an internal letter lands. Present only when `addressed` is `inbox`. */
   readonly inbox?: string;
   readonly from?: string;
-  readonly subject: string | ((fields: TFields) => string);
+  readonly subject: string | ((fields: TFields, context: RenderContext) => string);
   /** A precompiled template, which takes the fields and the context as one object. */
   readonly html: (context: Record<string, unknown>) => string;
   readonly text?: (context: Record<string, unknown>) => string;
@@ -124,12 +135,23 @@ export type TemplatesFor<TSpec extends GeneratedSpec> = {
  * Turns a generated registry into the callback `createMailer` takes, so a generated module
  * and a hand written one reach the mailer the same way.
  */
-export function defineTemplates<TSpec extends GeneratedSpec>(
-  letters: GeneratedLetters<TSpec>,
-): () => TemplatesFor<TSpec> {
+export type GeneratedRegistry<TSpec extends GeneratedSpec, TCopy> = {
+  letters: GeneratedLetters<TSpec>;
+  /** The catalogs, when the letters are localised. */
+  copy?: TCopy;
+};
+
+export type Registry<TLetters, TCopy> = {
+  letters: TLetters;
+  copy?: TCopy;
+};
+
+export function defineTemplates<TSpec extends GeneratedSpec, TCopy extends CopyConfig = never>(
+  registry: GeneratedRegistry<TSpec, TCopy>,
+): () => Registry<TemplatesFor<TSpec>, TCopy> {
   const built: Record<string, SomeLetter> = {};
 
-  for (const [name, letter] of Object.entries(letters)) {
+  for (const [name, letter] of Object.entries(registry.letters)) {
     const render = (fields: Record<string, unknown>, context: RenderContext): Rendered => {
       const all = { ...fields, ...context };
 
@@ -144,7 +166,7 @@ export function defineTemplates<TSpec extends GeneratedSpec>(
       subject:
         typeof letter.subject === "string"
           ? letter.subject
-          : (fields: never) => letter.subject(fields),
+          : (fields: never, context: RenderContext) => letter.subject(fields, context),
       body: render,
       ...(letter.replyToField === undefined
         ? {}
@@ -162,5 +184,10 @@ export function defineTemplates<TSpec extends GeneratedSpec>(
   // The one assertion in this factory. A generated module states its own letter kinds and
   // field types, and this maps the entries onto them; nothing here can be written
   // generically over a registry whose shape only the caller knows.
-  return () => built as unknown as TemplatesFor<TSpec>;
+  const letters = built as unknown as TemplatesFor<TSpec>;
+
+  return () => ({
+    letters,
+    ...(registry.copy === undefined ? {} : { copy: registry.copy }),
+  });
 }

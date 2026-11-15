@@ -2,5 +2,6 @@
 subject: Welcome to Acme
 ---
 {{#> layout heading="Welcome" }}
-  <p>Hi {{ reader.name }}, welcome to Acme.</p>
+  <p>{{ t "greeting.named" displayName=reader.name }}</p>
+  <p>Welcome to Acme.</p>
 {{/layout}}

@@ -20,9 +20,10 @@ result union, backoff, the `memory` provider and the `resend` provider with its 
 mapping and the base url guard, all covered by both test tiers. `example/` uses the package
 the way a caller does, and `src/build/` turns letter files into a typed registry, proved
 against fixtures whose generated output is committed under `tests/build/generated/`.
-Templates can be declared by hand in the `templates` callback or generated. The copy
-catalog that localises them, and the helpers that need a locale (`t`, dates, money, lists),
-have no code yet, and an unknown helper fails the build by name until they land. Where this file names a module that has not landed, it is the contract
+Templates can be declared by hand in the `templates` callback or generated, and the copy
+catalog is wired through both: `t` and the `Intl` helpers in a body, locale names with no
+convention at all, and the catalog checks in the build. What has no code yet is the preview
+server and the scaffolder. Where this file names a module that has not landed, it is the contract
 for building it rather than code you can read, so check that a file exists before assuming
 it.
 
@@ -103,20 +104,22 @@ src/
   result.ts                MailResult, MailError and the error kinds
   capabilities.ts          capability types, and send options conditional on them
   provider.ts              the Provider interface and the helpers that read its types
+  copy.ts                  translate, the escaping rule and the Intl formatters
+  handlebars.ts            exported from "@rapture-sh/mailer/handlebars". the helper glue.
   retry.ts                 backoff over the transient kinds only
   guards.ts                the construction-time assertions, baseUrl included
   providers/
     resend.ts              exported from "@rapture-sh/mailer/resend"
     memory.ts              exported from "@rapture-sh/mailer/memory"
   build/                   exported from "@rapture-sh/mailer/build". node only.
-    index.ts               build(): letter files in, one typed module out
+    index.ts               build(): letter files and catalogs in, one typed module out
     frontmatter.ts         the --- header, and what makes a file a letter
-    fields.ts              the handlebars syntax tree to field types
+    fields.ts              the handlebars syntax tree to field types and copy keys
     emit.ts                the typed registry, and the bodies beside it
 
 tests/                     mirrors src/, one file per source file
   types/                   the type tier, *.test-d.ts, run with vitest --typecheck
-  build/fixtures/          real letter files the build runs against
+  build/fixtures/          real letter files and three catalogs the build runs against
   build/generated/         their output, committed, typechecked and rendered by tests
 
 example/                   a caller's application, run against src/ with tsx
@@ -216,6 +219,13 @@ behaving like the same mailer.
   comes from outside the file, an invariant the caller has to keep, a unit, a measured
   number, a line that looks pointless and is not, or an approach that was tried and
   failed.
+- **A locale name is a key in a caller's catalogs, never a language tag.** Nothing in this
+  package parses, validates or normalises one. Where `Intl` needs a tag, an unusable name
+  falls back to the default locale rather than failing: a letter must not fail to send over
+  the name of a locale.
+- **The copy is ours and a value is not.** A copy string may carry markup and is left
+  alone; a value filled into it is escaped. The values a caller declares once for every key
+  are ours too, so they go in as written.
 - **Cite provider behaviour where it is surprising.** A one-line comment saying that a
   provider answers 422 for a suppressed recipient, with a doc link, is worth more than
   any other comment in this repo. The next person will otherwise assume the mapping is a

@@ -2,6 +2,8 @@ import Handlebars from "handlebars";
 
 export type FieldType =
   | { kind: "string" }
+  | { kind: "number" }
+  | { kind: "moment" }
   | { kind: "strings" }
   | { kind: "rows"; row: Fields }
   | { kind: "written"; type: string };
@@ -10,17 +12,29 @@ export type Field = { type: FieldType; optional: boolean };
 
 export type Fields = Record<string, Field>;
 
-/**
- * Names the render context supplies, so a body may use them and they are not fields.
- */
-const CONTEXT = new Set(["reader"]);
+/** One `t "key"` in a body, with the values it was given. */
+export type CopyUse = { key: string; values: readonly string[] };
+
+/** Names the render context supplies, so a body may use them and they are not fields. */
+const CONTEXT = new Set(["reader", "locale"]);
+
+/** Block helpers the body language has. */
+const BLOCKS = new Set(["if", "unless", "each"]);
 
 /**
- * Block helpers the body language has. Everything else is refused by name, because a
- * mistyped helper that was quietly treated as a field would put an empty string in a
- * letter instead of failing the build.
+ * Inline helpers the body language has, and what each one's arguments must be.
+ *
+ * Everything else is refused by name, because a mistyped helper quietly treated as a field
+ * would put an empty string in a letter instead of failing the build.
  */
-const BLOCKS = new Set(["if", "unless", "each"]);
+const HELPERS: Readonly<Record<string, readonly FieldType["kind"][]>> = {
+  t: [],
+  date: ["moment"],
+  time: ["moment"],
+  dateTime: ["moment"],
+  money: ["number", "string"],
+  list: ["strings"],
+};
 
 const isMustache = (statement: hbs.AST.Statement): statement is hbs.AST.MustacheStatement =>
   statement.type === "MustacheStatement";
@@ -43,21 +57,44 @@ const isPath = (expression: hbs.AST.Expression): expression is hbs.AST.PathExpre
 const isSubExpression = (expression: hbs.AST.Expression): expression is hbs.AST.SubExpression =>
   expression.type === "SubExpression";
 
+const isStringLiteral = (expression: hbs.AST.Expression): expression is hbs.AST.StringLiteral =>
+  expression.type === "StringLiteral";
+
 type Frame = {
   fields: Fields;
   /** Set when the scope is read as a value, as in `{{ this }}` inside an each. */
   scalar: boolean;
 };
 
+type Walk = {
+  frames: readonly Frame[];
+  optional: boolean;
+  uses: CopyUse[];
+};
+
 function at(frames: readonly Frame[], depth: number): Frame | undefined {
   return frames[frames.length - 1 - depth];
 }
 
-function record(frames: readonly Frame[], path: hbs.AST.PathExpression, optional: boolean): void {
+/** A specific type beats the string a bare placeholder implies, and the first one wins. */
+function merge(existing: Field | undefined, type: FieldType, optional: boolean): Field {
+  if (existing === undefined) return { type, optional };
+
+  const kept = existing.type.kind === "string" && type.kind !== "string" ? type : existing.type;
+
+  return { type: kept, optional: existing.optional && optional };
+}
+
+function record(
+  walk: Walk,
+  path: hbs.AST.PathExpression,
+  optional: boolean,
+  type: FieldType = { kind: "string" },
+): void {
   // `@index`, `@first` and friends belong to handlebars, not to the caller.
   if (path.data) return;
 
-  const frame = at(frames, path.depth);
+  const frame = at(walk.frames, path.depth);
 
   if (frame === undefined) {
     throw new Error(`'${path.original}' reaches further out than this letter's fields`);
@@ -72,7 +109,7 @@ function record(frames: readonly Frame[], path: hbs.AST.PathExpression, optional
   const [name, ...rest] = path.parts;
 
   if (name === undefined) return;
-  if (path.depth === 0 && frames.length === 1 && CONTEXT.has(name)) return;
+  if (path.depth === 0 && walk.frames.length === 1 && CONTEXT.has(name)) return;
 
   if (rest.length > 0) {
     throw new Error(
@@ -80,44 +117,94 @@ function record(frames: readonly Frame[], path: hbs.AST.PathExpression, optional
     );
   }
 
-  const existing = frame.fields[name];
-
-  frame.fields[name] = {
-    type: existing?.type ?? { kind: "string" },
-    // A name used once behind an `#if` is optional; used anywhere unconditionally, it is not.
-    optional: existing === undefined ? optional : existing.optional && optional,
-  };
+  frame.fields[name] = merge(frame.fields[name], type, optional);
 }
 
-function walkExpression(
-  expression: hbs.AST.Expression,
-  frames: readonly Frame[],
-  optional: boolean,
+function typeFor(kind: FieldType["kind"]): FieldType {
+  switch (kind) {
+    case "number":
+      return { kind: "number" };
+    case "moment":
+      return { kind: "moment" };
+    case "strings":
+      return { kind: "strings" };
+    case "rows":
+      return { kind: "rows", row: {} };
+    default:
+      return { kind: "string" };
+  }
+}
+
+/** A helper call, wherever it appears: `{{ money total currency }}` or `(t "key")`. */
+function walkHelper(
+  name: string,
+  params: readonly hbs.AST.Expression[],
+  hash: hbs.AST.Hash | undefined,
+  walk: Walk,
 ): void {
+  const shape = HELPERS[name];
+
+  if (shape === undefined) {
+    throw new Error(`the helper '${name}' is not part of the body language`);
+  }
+
+  if (name === "t") {
+    const key = params[0];
+
+    if (key === undefined || !isStringLiteral(key)) {
+      throw new Error("t needs a copy key written out, so the build can check it");
+    }
+
+    const values: string[] = [];
+
+    for (const pair of hash?.pairs ?? []) {
+      values.push(pair.key);
+      walkExpression(pair.value, walk);
+    }
+
+    walk.uses.push({ key: key.value, values });
+
+    return;
+  }
+
+  params.forEach((param, index) => {
+    const kind = shape[index];
+
+    if (kind === undefined) throw new Error(`${name} takes ${shape.length} arguments`);
+
+    if (isPath(param)) {
+      record(walk, param, walk.optional, typeFor(kind));
+
+      return;
+    }
+
+    walkExpression(param, walk);
+  });
+
+  for (const pair of hash?.pairs ?? []) {
+    // `zone=timezone` is a field; `style="long"` is a literal and nothing else.
+    if (isPath(pair.value)) record(walk, pair.value, walk.optional);
+    else walkExpression(pair.value, walk);
+  }
+}
+
+function walkExpression(expression: hbs.AST.Expression, walk: Walk): void {
   if (isPath(expression)) {
-    record(frames, expression, optional);
+    record(walk, expression, walk.optional);
 
     return;
   }
 
   if (isSubExpression(expression)) {
-    throw new Error(`the helper '${expression.path.original}' is not available yet`);
+    walkHelper(expression.path.original, expression.params, expression.hash, walk);
   }
 }
 
-function walkHash(
-  hash: hbs.AST.Hash | undefined,
-  frames: readonly Frame[],
-  optional: boolean,
-): void {
-  for (const pair of hash?.pairs ?? []) walkExpression(pair.value, frames, optional);
+function walkHash(hash: hbs.AST.Hash | undefined, walk: Walk): void {
+  for (const pair of hash?.pairs ?? []) walkExpression(pair.value, walk);
 }
 
-function walkProgram(
-  program: hbs.AST.Program | undefined,
-  frames: readonly Frame[],
-  optional: boolean,
-): void {
+function walkProgram(program: hbs.AST.Program | undefined, walk: Walk): void {
   for (const statement of program?.body ?? []) {
     if (isSkippable(statement)) continue;
 
@@ -125,29 +212,35 @@ function walkProgram(
       if (!isPath(statement.path)) continue;
 
       if (statement.params.length > 0 || statement.hash?.pairs.length > 0) {
-        throw new Error(`the helper '${statement.path.original}' is not available yet`);
+        walkHelper(statement.path.original, statement.params, statement.hash, walk);
+
+        continue;
       }
 
-      record(frames, statement.path, optional);
+      if (statement.path.original === "t") {
+        throw new Error("t needs a copy key written out, so the build can check it");
+      }
+
+      record(walk, statement.path, walk.optional);
 
       continue;
     }
 
     if (isBlock(statement)) {
-      walkBlock(statement, frames, optional);
+      walkBlock(statement, walk);
 
       continue;
     }
 
     if (isPartialBlock(statement)) {
-      walkHash(statement.hash, frames, optional);
-      walkProgram(statement.program, frames, optional);
+      walkHash(statement.hash, walk);
+      walkProgram(statement.program, walk);
 
       continue;
     }
 
     if (isPartial(statement)) {
-      walkHash(statement.hash, frames, optional);
+      walkHash(statement.hash, walk);
 
       continue;
     }
@@ -156,15 +249,11 @@ function walkProgram(
   }
 }
 
-function walkBlock(
-  statement: hbs.AST.BlockStatement,
-  frames: readonly Frame[],
-  optional: boolean,
-): void {
+function walkBlock(statement: hbs.AST.BlockStatement, walk: Walk): void {
   const name = statement.path.original;
 
   if (typeof name !== "string" || !BLOCKS.has(name)) {
-    throw new Error(`the block helper '${String(name)}' is not available yet`);
+    throw new Error(`the block helper '${String(name)}' is not part of the body language`);
   }
 
   const subject = statement.params[0];
@@ -176,12 +265,16 @@ function walkBlock(
   if (name === "each") {
     const frame: Frame = { fields: {}, scalar: false };
 
-    walkProgram(statement.program, [...frames, frame], false);
-    walkProgram(statement.inverse, frames, optional);
+    walkProgram(statement.program, {
+      ...walk,
+      frames: [...walk.frames, frame],
+      optional: false,
+    });
+    walkProgram(statement.inverse, walk);
 
-    record(frames, subject, optional);
+    record(walk, subject, walk.optional);
 
-    const outer = at(frames, subject.depth);
+    const outer = at(walk.frames, subject.depth);
     const field = outer?.fields[subject.parts.join(".")];
 
     if (outer !== undefined && field !== undefined) {
@@ -196,9 +289,9 @@ function walkBlock(
 
   // Everything an `#if` guards is conditional, so the field it tests and every field
   // inside it are optional.
-  record(frames, subject, true);
-  walkProgram(statement.program, frames, true);
-  walkProgram(statement.inverse, frames, true);
+  record(walk, subject, true);
+  walkProgram(statement.program, { ...walk, optional: true });
+  walkProgram(statement.inverse, { ...walk, optional: true });
 }
 
 /** The `{name}` placeholders in a subject line, which are fields like any other. */
@@ -209,6 +302,8 @@ export function subjectPlaceholders(subject: string): readonly string[] {
 export type InferredBody = {
   fields: Fields;
   partials: readonly string[];
+  /** Every `t "key"` the body asked for, for the build to check against the catalogs. */
+  copy: readonly CopyUse[];
 };
 
 /** Reads the fields a body asks for straight off its handlebars syntax tree. */
@@ -216,11 +311,12 @@ export function inferBody(source: string): InferredBody {
   const program = Handlebars.parse(source);
   const frame: Frame = { fields: {}, scalar: false };
   const partials: string[] = [];
+  const uses: CopyUse[] = [];
 
   collectPartials(program, partials);
-  walkProgram(program, [frame], false);
+  walkProgram(program, { frames: [frame], optional: false, uses });
 
-  return { fields: frame.fields, partials };
+  return { fields: frame.fields, partials, copy: uses };
 }
 
 function collectPartials(program: hbs.AST.Program | undefined, found: string[]): void {
@@ -243,6 +339,8 @@ function collectPartials(program: hbs.AST.Program | undefined, found: string[]):
 
 export function typeOf(field: Field): string {
   if (field.type.kind === "string") return "string";
+  if (field.type.kind === "number") return "number";
+  if (field.type.kind === "moment") return "number | Date";
   if (field.type.kind === "strings") return "readonly string[]";
   if (field.type.kind === "written") return field.type.type;
 

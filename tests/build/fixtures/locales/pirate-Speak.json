@@ -1,0 +1,10 @@
+{
+  "greeting.named": "Ahoy {displayName},",
+  "magic-code.subject": "Yer code be {code}",
+  "magic-code.heading": "Come aboard",
+  "magic-code.body": "Enter this code to come aboard. It be good for <b>10 minutes</b>.",
+  "magic-code.closing": "If ye never knocked, send word to {supportLink}.",
+  "booking.intro": "Yer passage on <strong>{activityName}</strong> be booked for {participantCount} souls.",
+  "booking.paid": "Ye paid {totalAmount}.",
+  "unused.key": "Not a soul asks for this one."
+}

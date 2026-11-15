@@ -1,0 +1,10 @@
+{
+  "greeting.named": "Hi {displayName},",
+  "magic-code.subject": "Your code is {code}",
+  "magic-code.heading": "Sign in",
+  "magic-code.body": "Enter this code to finish signing in. It expires in <b>10 minutes</b>.",
+  "magic-code.closing": "If you did not try to sign in, write to {supportLink}.",
+  "booking.intro": "Your booking for <strong>{activityName}</strong> is confirmed for {participantCount} people.",
+  "booking.paid": "You paid {totalAmount}.",
+  "unused.key": "Nothing asks for this one."
+}

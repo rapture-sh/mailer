@@ -1,7 +1,21 @@
 export type { Capability, MessageOptions } from "./capabilities";
+export {
+  type Catalog,
+  type CopyConfig,
+  type CopyValues,
+  escapeValue,
+  type Formatters,
+  formattersFor,
+  type LocaleOf,
+  placeholdersIn,
+  translate,
+} from "./copy";
 export { assertBaseUrl, currentEnvironment } from "./guards";
+export { type HelperHost, registerCopyHelpers } from "./handlebars";
 export {
   createMailer,
+  type LettersIn,
+  type LocaleIn,
   type Mailer,
   type MailerConfig,
   type SendArgs,

@@ -1,4 +1,5 @@
 export type { Capability, MessageOptions } from "./capabilities";
+export { assertBaseUrl, currentEnvironment } from "./guards";
 export {
   createMailer,
   type Mailer,

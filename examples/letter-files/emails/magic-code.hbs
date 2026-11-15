@@ -1,0 +1,18 @@
+---
+from: auth
+subject: Your code is {code}
+sample:
+  code: "519204"
+---
+{{#> layout heading="Sign in to Acme" }}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px">Hi {{ reader.name }},</td>
+  </tr>
+  <tr>
+    <td align="center" style="padding: 20px 32px 28px">
+      <div style="background: #e6eefb; border-radius: 12px; padding: 18px; font-size: 26px; letter-spacing: 6px; color: #2563c4">
+        {{ code }}
+      </div>
+    </td>
+  </tr>
+{{/layout}}

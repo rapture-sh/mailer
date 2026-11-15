@@ -13,7 +13,7 @@
       "!dist",
       "!coverage",
       "!tests/build/generated",
-      "!example/generated"
+      "!examples/**/generated"
     ]
   },
   "formatter": {
@@ -59,7 +59,7 @@
       }
     },
     {
-      "includes": ["tests/**", "example/**"],
+      "includes": ["tests/**", "examples/**"],
       "linter": {
         "rules": {
           "suspicious": {

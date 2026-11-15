@@ -31,5 +31,5 @@
       "@rapture-sh/mailer/memory": ["./src/providers/memory.ts"]
     }
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "example/**/*.ts", "*.ts", "*.mts"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts", "*.ts", "*.mts"]
 }

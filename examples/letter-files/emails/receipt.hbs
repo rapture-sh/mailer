@@ -1,0 +1,37 @@
+---
+from: notifications
+subject: Receipt {reference}
+fields:
+  participants: number
+sample:
+  reference: REF-4182
+  activityName: Kayak tour, Lake Thun
+  participants: 3
+  startsAt: 2026-07-02T08:00:00.000Z
+  timezone: Europe/Zurich
+  totalMinor: 12500
+  currency: CHF
+  tickets:
+    - 2 Adult
+    - 1 Child
+---
+{{!--
+  Every field below was read off this markup. `participants` is the only one declared in
+  the header, because nothing here says it is a number rather than a string.
+--}}
+{{#> layout heading="Thanks for your booking" }}
+  <tr>
+    <td style="padding: 20px 32px 0; font-size: 15px">
+      {{ activityName }} for {{ participants }} people, {{ dateTime startsAt zone=timezone }}.
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 32px 0; font-size: 15px">{{ list tickets }}</td>
+  </tr>
+  <tr>
+    <td style="padding: 12px 32px 28px; font-size: 15px">
+      You paid {{ money totalMinor currency }}.
+      {{#if voucherCode}}Voucher {{ voucherCode }} was applied.{{/if}}
+    </td>
+  </tr>
+{{/layout}}

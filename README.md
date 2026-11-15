@@ -69,6 +69,7 @@ Contents
 - [Results and errors](#results-and-errors)
 - [Retries](#retries)
 - [Attachments](#attachments)
+- [Examples](#examples)
 - [Compatibility](#compatibility)
 - [Not in scope](#not-in-scope)
 - [Where it came from](#where-it-came-from)
@@ -193,16 +194,26 @@ which you write once.
 **2. Run the build.** It is a function, so it lives in a script of yours rather than being
 a command this package owns:
 
-```ts
-// mail/build.ts
+```js
+// scripts/build-emails.mjs
 import { build } from "@rapture-sh/mailer/build";
 
 await build({
   letters: "emails",
   out: "mail/templates.ts",
+  // The senders a letter's `from:` may name. A typo fails here with a file and a line.
   senders: ["auth", "hello"],
   check: process.argv.includes("--check"),
 });
+```
+
+```json
+{
+  "scripts": {
+    "build:emails": "node scripts/build-emails.mjs",
+    "build:emails:check": "node scripts/build-emails.mjs --check"
+  }
+}
 ```
 
 **3. What it does.** It reads every letter file and works out, from the markup itself, what
@@ -234,7 +245,9 @@ await mailer.sendTemplate("magic-code", { to, fields: { code: "519204" } });
 ```
 
 Adding an email is now one file. No union to extend, no field type to write, no place to
-forget.
+forget. The sender is checked twice over: once by the build against the list above, and
+once by the compiler, because the generated type carries `from: "auth"` and a mailer whose
+`senders` do not include it does not compile.
 
 A few more things the header can do:
 
@@ -346,7 +359,8 @@ Testing without sending anything
 
 The reason this package exists, and the part to set up first.
 
-**In unit tests, use the memory provider.** No network, no key, nothing to run:
+**In unit tests, use the memory provider.** No network, no key, nothing to run. There is a
+[worked example](examples/testing/README.md) of this:
 
 ```ts
 import { memory } from "@rapture-sh/mailer/memory";
@@ -375,6 +389,17 @@ resend({ apiKey: "re_local", baseUrl: process.env.RESEND_BASE_URL });
 
 ```bash
 RESEND_BASE_URL=http://localhost:3000 pnpm dev
+```
+
+In production the base url is simply not read, so the same code posts to Resend:
+
+```ts
+const isProduction = process.env.NODE_ENV === "production";
+
+resend({
+  apiKey: process.env.RESEND_API_KEY ?? "",
+  baseUrl: isProduction ? "" : (process.env.RESEND_BASE_URL ?? ""),
+});
 ```
 
 That is why there is no "dev" provider in this package, and why there never will be. A dev
@@ -518,6 +543,24 @@ capability makes the option a compile error, and because that capability carries
 limit, an oversized message comes back as `PayloadTooLarge` before anything is posted.
 
 
+Examples
+--------
+
+Each one is a small application showing one thing, and each runs with no key and no
+network. They live in [examples/](examples/README.md).
+
+| Example | What it shows |
+| --- | --- |
+| [basic-send](examples/basic-send/README.md) | One message, no templates, nothing generated |
+| [inline-templates](examples/inline-templates/README.md) | Typed letters declared in TypeScript |
+| [letter-files](examples/letter-files/README.md) | Letters as `.hbs` files, registry generated from them |
+| [with-locales](examples/with-locales/README.md) | The same letters in two languages, with `Intl` formatting |
+| [testing](examples/testing/README.md) | Mail tested with no network and no API key |
+
+More are planned, including one against mock-resend once it is finished, and thin Next.js
+and Convex setups. [Pull requests welcome.](#extending-it)
+
+
 Compatibility
 -------------
 
@@ -582,11 +625,10 @@ pnpm install
 pnpm check
 ```
 
-[example/](example/README.md) is a small application that uses the package the way you
-would, letter files and catalogs included. It needs no key and no network:
+[examples/](examples/README.md) holds the applications above. All of them at once:
 
 ```bash
-pnpm example
+pnpm examples
 ```
 
 

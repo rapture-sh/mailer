@@ -22,6 +22,7 @@ export default defineConfig({
     },
   },
   test: {
+    // The examples have a config of their own, so this suite is the package's own.
     include: ["tests/**/*.test.ts"],
     typecheck: {
       include: ["tests/types/**/*.test-d.ts"],

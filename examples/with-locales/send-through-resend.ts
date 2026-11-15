@@ -5,20 +5,27 @@ import { reader, registry, senders } from "./mailer";
 /**
  * The same letters through the real `resend` provider, pointed at mock-resend.
  *
- *   RESEND_BASE_URL=http://localhost:<port> pnpm example:mock
+ *   RESEND_BASE_URL=http://localhost:<port> pnpm example:resend
  *
  * This is the whole reason the package ships no dev provider: development and CI run the
  * provider code that production runs, over the same wire format, and only the host
  * changes. Point it at nothing and you have no coverage of the code that matters.
  */
-const baseUrl = process.env.RESEND_BASE_URL;
+/**
+ * The production shape of this: the base url is read outside production and ignored in it.
+ * Development points at mock-resend, production posts to Resend, and the provider refuses
+ * a non-default base url under NODE_ENV=production anyway, so a deploy cannot send mail
+ * into a mock by accident.
+ */
+const isProduction = process.env.NODE_ENV === "production";
+const baseUrl = isProduction ? "" : (process.env.RESEND_BASE_URL ?? "");
 
-if (baseUrl === undefined || baseUrl === "") {
+if (baseUrl === "" && !isProduction) {
   console.error(
     [
       "Set RESEND_BASE_URL to wherever mock-resend is listening, for example:",
       "",
-      "  RESEND_BASE_URL=http://localhost:3000 pnpm example:mock",
+      "  RESEND_BASE_URL=http://localhost:3000 pnpm example:resend",
       "",
       "mock-resend is at https://github.com/rapture-sh/mock-resend. To send through the",
       "real API instead, set RESEND_BASE_URL to https://api.resend.com and give",
@@ -33,6 +40,7 @@ const mailer = createMailer({
   provider: resend({
     // mock-resend has nothing to authenticate, so any string will do against it.
     apiKey: process.env.RESEND_API_KEY ?? "re_local",
+    // Empty in production, which is the provider's default, so nothing is overridden.
     baseUrl,
   }),
   senders,

@@ -3,8 +3,8 @@ import { build } from "@rapture-sh/mailer/build";
 /**
  * The build script, which is yours rather than a command the package ships.
  *
- *   pnpm example:build            writes example/generated/
- *   pnpm example:build --check    fails if what is committed is not current
+ *   pnpm example:locales:build            writes generated/
+ *   pnpm example:locales:build --check    fails if what is committed is not current
  *
  * Note where things are: the letters sit in `emails/`, the catalogs in `copy/`, and the
  * files are named `english.json` and `swiss-german.json` while the locales are `en-GB` and
@@ -14,15 +14,15 @@ import { build } from "@rapture-sh/mailer/build";
 const checking = process.argv.includes("--check");
 
 const result = await build({
-  letters: "example/emails",
-  out: "example/generated/templates.ts",
+  letters: "examples/with-locales/emails",
+  out: "examples/with-locales/generated/templates.ts",
   senders: ["auth", "notifications"],
 
   copy: {
     default: "en-GB",
     catalogs: {
-      "en-GB": "example/copy/english.json",
-      "de-CH": "example/copy/swiss-german.json",
+      "en-GB": "examples/with-locales/copy/english.json",
+      "de-CH": "examples/with-locales/copy/swiss-german.json",
     },
     // Every key may use these without being passed them. They are ours, so they go in as
     // written and may carry markup; a caller's values are escaped.
@@ -36,7 +36,7 @@ const result = await build({
 });
 
 if (checking && result.stale) {
-  console.error(`${result.out} is out of date. Run \`pnpm example:build\`.`);
+  console.error(`${result.out} is out of date. Run \`pnpm example:locales:build\`.`);
   process.exit(1);
 }
 

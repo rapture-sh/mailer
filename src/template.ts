@@ -85,3 +85,82 @@ export function letterBuilder<TSender extends string>(): LetterBuilder<TSender> 
     internal: (definition) => ({ ...definition, addressed: "inbox" }),
   };
 }
+
+/** One letter as a build step writes it: a compiled body, and what to wrap it in. */
+export type GeneratedLetter<TFields> = {
+  readonly addressed: "caller" | "inbox";
+  /** Where an internal letter lands. Present only when `addressed` is `inbox`. */
+  readonly inbox?: string;
+  readonly from?: string;
+  readonly subject: string | ((fields: TFields) => string);
+  /** A precompiled template, which takes the fields and the context as one object. */
+  readonly html: (context: Record<string, unknown>) => string;
+  readonly text?: (context: Record<string, unknown>) => string;
+  /** The field to read a reply address out of, checked against the fields themselves. */
+  readonly replyToField?: keyof TFields & string;
+  /** What the preview and the checks render with. Compiled against the fields, so it
+   * cannot drift from them. */
+  readonly sample?: TFields;
+};
+
+/**
+ * What a generated module declares: one entry per letter, saying whether a caller
+ * addresses it and what its fields are. Both are written out rather than inferred, because
+ * generated code can afford to be explicit and inference here would have to guess.
+ */
+export type GeneratedSpec = Record<string, { addressed: "caller" | "inbox"; fields: object }>;
+
+export type GeneratedLetters<TSpec extends GeneratedSpec> = {
+  [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]>;
+};
+
+export type TemplatesFor<TSpec extends GeneratedSpec> = {
+  [K in keyof TSpec]: TSpec[K]["addressed"] extends "inbox"
+    ? InternalLetter<TSpec[K]["fields"]>
+    : Letter<TSpec[K]["fields"]>;
+};
+
+/**
+ * Turns a generated registry into the callback `createMailer` takes, so a generated module
+ * and a hand written one reach the mailer the same way.
+ */
+export function defineTemplates<TSpec extends GeneratedSpec>(
+  letters: GeneratedLetters<TSpec>,
+): () => TemplatesFor<TSpec> {
+  const built: Record<string, SomeLetter> = {};
+
+  for (const [name, letter] of Object.entries(letters)) {
+    const render = (fields: Record<string, unknown>, context: RenderContext): Rendered => {
+      const all = { ...fields, ...context };
+
+      return {
+        html: letter.html(all),
+        ...(letter.text === undefined ? {} : { text: letter.text(all) }),
+      };
+    };
+
+    const shared = {
+      ...(letter.from === undefined ? {} : { from: letter.from }),
+      subject:
+        typeof letter.subject === "string"
+          ? letter.subject
+          : (fields: never) => letter.subject(fields),
+      body: render,
+      ...(letter.replyToField === undefined
+        ? {}
+        : {
+            replyTo: (fields: Record<string, unknown>) => String(fields[letter.replyToField]),
+          }),
+    };
+
+    built[name] =
+      letter.addressed === "inbox"
+        ? { ...shared, addressed: "inbox", inbox: letter.inbox ?? "" }
+        : { ...shared, addressed: "caller" };
+  }
+
+  // The one assertion in this factory. A generated module states its own letter kinds and
+  // field types, and this maps the entries onto them; nothing here can be written
+  // generically over a registry whose shape only the caller knows.
+  return () => built as unknown as TemplatesFor<TSpec>;
+}

@@ -144,6 +144,80 @@ Weakening one of the five is allowed, but it costs a failing type test removed i
 same commit and a note here saying what changed. They are the contract.
 
 
+Letters as files
+----------------
+
+Declaring twenty six letters by hand is the actual job, so a letter can instead be one
+handlebars file with a header, and the build reads the fields off the body.
+
+```hbs
+---
+from: auth
+subject: Your code is {code}
+sample:
+  code: "519204"
+---
+{{#> layout heading="Sign in" }}
+  <p>Hi {{ reader.name }},</p>
+  <p>Your code is <b>{{ code }}</b>.</p>
+{{/layout}}
+```
+
+No `fields:` block there, because a placeholder is a `string` until the header says
+otherwise. What the body implies, and what always beats it:
+
+| In the body | Becomes |
+| --- | --- |
+| `{{ code }}` | `code: string` |
+| `{{#if voucherCode}}` | `voucherCode?: string`, along with everything inside the block |
+| `{{#each tickets}}{{ name }}` | `tickets: readonly { name: string }[]` |
+| `{{ reader.name }}` | nothing, the context supplies it |
+| `fields:` in the header | exactly what you wrote, for the types a body cannot imply |
+
+A file with a header is a letter. A file without one is a partial, which is how a layout is
+recognised without being named anywhere. `inbox:` makes a letter internal, so no caller has
+to address it, and `reply-to:` names the field to read a reply address out of.
+
+The build is a function rather than a CLI, so it goes in a script in your own repo:
+
+```ts
+import { build } from "@rapture-sh/mailer/build";
+
+await build({
+  letters: "emails",
+  out: "mail/templates.ts",
+  senders: ["auth", "notifications"],
+  check: process.argv.includes("--check"),
+});
+```
+
+It writes two files. `mail/templates.ts` is the typed registry, ordinary TypeScript that
+your own compiler checks, and `mail/templates.bodies.ts` is what handlebars' precompiler
+emits, which is unannotated JavaScript carrying a `@ts-nocheck` and nothing else. They are
+separate so that one suppression cannot cover the types, which are the point of generating
+anything. Hand the registry to the mailer and the letters are typed at every call site:
+
+```ts
+import { templates } from "./mail/templates";
+
+const mailer = createMailer({ provider, senders, from: "notifications", templates });
+
+await mailer.sendTemplate("magic-code", { to, fields: { code: "519204" } });
+```
+
+The sample in the header is checked against the fields by the compiler, so a preview cannot
+drift from the letter it previews. `check: true` writes nothing and reports whether the
+committed output is current, which is what belongs in CI.
+
+`handlebars` and `yaml` are optional peer dependencies of
+`@rapture-sh/mailer/build`. Nothing that only sends mail installs either.
+
+The body language is deliberately small for now: placeholders, `#if`, `#unless`, `#each`
+and partials. An unknown helper fails the build by name rather than being quietly treated
+as a field, so the localisation helpers (`t`, and formatting for dates, money and lists)
+announce themselves as missing until they land.
+
+
 Retries
 -------
 

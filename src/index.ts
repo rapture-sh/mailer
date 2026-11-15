@@ -40,3 +40,10 @@ export type {
   Rendered,
   SomeLetter,
 } from "./template";
+export {
+  defineTemplates,
+  type GeneratedLetter,
+  type GeneratedLetters,
+  type GeneratedSpec,
+  type TemplatesFor,
+} from "./template";

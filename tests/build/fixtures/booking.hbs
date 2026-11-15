@@ -1,0 +1,24 @@
+---
+from: notifications
+subject: Your booking for {activityName} is confirmed
+fields:
+  participants: number
+sample:
+  activityName: Kayak tour, Lake Thun
+  participants: 3
+  reference: KYW-4182
+  tickets:
+    - name: Adult
+      quantity: "2"
+---
+{{#> layout heading="Booking confirmed" }}
+  <p>{{ activityName }}, {{ participants }} people, reference {{ reference }}.</p>
+  <ul>
+    {{#each tickets}}
+      <li>{{ quantity }} {{ name }}</li>
+    {{/each}}
+  </ul>
+  {{#if voucherCode}}
+    <p>Voucher {{ voucherCode }} applied.</p>
+  {{/if}}
+{{/layout}}

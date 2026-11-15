@@ -14,13 +14,15 @@ driver, in code, in docs or in a commit message.
 
 It is part of [Rapture.sh](https://rapture.sh) and is MIT licensed.
 
-**What is in the tree right now.** The toolchain, the send surface and both providers are
-built: `createMailer` with `send` and `sendTemplate`, typed senders, capability types, the
+**What is in the tree right now.** The toolchain, the send surface, both providers and the
+build step are built: `createMailer` with `send` and `sendTemplate`, typed senders, capability types, the
 result union, backoff, the `memory` provider and the `resend` provider with its error
 mapping and the base url guard, all covered by both test tiers. `example/` uses the package
-the way a caller does. Templates are declared by hand in the `templates` callback; the
-build step that reads them out of `.hbs` files, and the copy catalog that localises them,
-have no code yet. Where this file names a module that has not landed, it is the contract
+the way a caller does, and `src/build/` turns letter files into a typed registry, proved
+against fixtures whose generated output is committed under `tests/build/generated/`.
+Templates can be declared by hand in the `templates` callback or generated. The copy
+catalog that localises them, and the helpers that need a locale (`t`, dates, money, lists),
+have no code yet, and an unknown helper fails the build by name until they land. Where this file names a module that has not landed, it is the contract
 for building it rather than code you can read, so check that a file exists before assuming
 it.
 
@@ -58,6 +60,7 @@ it.
 - TypeScript, strict, ESM only, targeting Node 22+
 - `tsdown` for the build, with an explicit `exports` map
 - `tsx` to run `example/`, which imports the package by name through a tsconfig path
+- `handlebars` and `yaml` as optional peer dependencies of the build entry only
 - Biome for lint and format
 - Vitest for both tiers of tests, with `--typecheck` and `expectTypeOf` for the type tier
 - `publint` and `@arethetypeswrong/cli` against the built package
@@ -105,9 +108,16 @@ src/
   providers/
     resend.ts              exported from "@rapture-sh/mailer/resend"
     memory.ts              exported from "@rapture-sh/mailer/memory"
+  build/                   exported from "@rapture-sh/mailer/build". node only.
+    index.ts               build(): letter files in, one typed module out
+    frontmatter.ts         the --- header, and what makes a file a letter
+    fields.ts              the handlebars syntax tree to field types
+    emit.ts                the typed registry, and the bodies beside it
 
 tests/                     mirrors src/, one file per source file
   types/                   the type tier, *.test-d.ts, run with vitest --typecheck
+  build/fixtures/          real letter files the build runs against
+  build/generated/         their output, committed, typechecked and rendered by tests
 
 example/                   a caller's application, run against src/ with tsx
   letters.ts               the senders and the registry, shared by both scripts

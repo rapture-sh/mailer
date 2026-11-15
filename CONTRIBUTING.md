@@ -135,11 +135,15 @@ Default answer is no. This package has no runtime dependencies and that is a fea
 goes into Convex functions, edge runtimes and Next server components, where every
 transitive dependency is weight on a cold start.
 
-There are no dependencies at all today, runtime or peer, and the `resend` provider stays
+The runtime has no dependencies at all, and the `resend` provider stays
 that way by posting to the documented HTTP API rather than wrapping the SDK. If a provider
 genuinely needs an SDK, it is an **optional peer dependency**, never a dependency:
 installing `@rapture-sh/mailer` must not install it. Say so in the PR description and add
 it to the `exports` map and the peer dependency meta.
+
+The build entry is the one exception, and the reason the mechanism exists: it needs
+`handlebars` and `yaml`, both declared optional peers, so anything that only sends mail
+installs neither.
 
 ## Commits
 

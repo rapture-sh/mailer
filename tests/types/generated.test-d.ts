@@ -72,6 +72,19 @@ describe("a generated registry", () => {
     });
   });
 
+  it("should require a field the subject's copy key names, however the body asks for it", async () => {
+    // reminder.hbs has it inside an #if, which is what makes a field optional everywhere
+    // else. A subject renders on every send, so this one is needed whatever the body did.
+    // @ts-expect-error reminder.subject names {activityName} and nothing passed one
+    await mailer.sendTemplate("reminder", { to: ada, fields: {} });
+  });
+
+  it("should still read that field as the type the body implied", () => {
+    expectTypeOf(templates().letters.reminder.body)
+      .parameter(0)
+      .toEqualTypeOf<{ activityName: string }>();
+  });
+
   it("should read a field's type off the helper the body passes it to", async () => {
     await mailer.sendTemplate("booking", {
       to: ada,

@@ -132,6 +132,17 @@ describe("the copy", () => {
     expect(sent?.html).toContain("Ahoy Ada,");
   });
 
+  it("should fill a subject key with a field the body only asks for conditionally", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("reminder", {
+      to: { ...ada, locale: "de-CH" },
+      fields: { activityName: "Kayak tour" },
+    });
+
+    expect(provider.sent[0]?.subject).toBe("Kayak tour beginnt bald");
+  });
+
   it("should leave markup in the copy alone, because the copy is ours", async () => {
     const { provider, mailer } = setup();
 

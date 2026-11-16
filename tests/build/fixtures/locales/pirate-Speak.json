@@ -6,5 +6,7 @@
   "magic-code.closing": "If ye never knocked, send word to {supportLink}.",
   "booking.intro": "Yer passage on <strong>{activityName}</strong> be booked for {participantCount} souls.",
   "booking.paid": "Ye paid {totalAmount}.",
-  "unused.key": "Not a soul asks for this one."
+  "unused.key": "Not a soul asks for this one.",
+  "reminder.subject": "{activityName} be settin' sail soon",
+  "reminder.heading": "Weigh anchor"
 }

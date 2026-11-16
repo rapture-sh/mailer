@@ -97,7 +97,7 @@ describe("a provider that cannot send attachments", () => {
   it("should offer only the letters it can send", () => {
     expectTypeOf(limited.sendTemplate)
       .parameter(0)
-      .toEqualTypeOf<"booking" | "feedback" | "magic-code" | "welcome">();
+      .toEqualTypeOf<"booking" | "feedback" | "magic-code" | "reminder" | "welcome">();
   });
 
   it("should take a registry whose letters attach nothing", () => {

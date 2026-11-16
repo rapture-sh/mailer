@@ -33,7 +33,7 @@ describe("build", () => {
     const { result } = await run();
 
     expect([result.letters, result.partials]).toEqual([
-      ["booking", "feedback", "magic-code", "receipt", "welcome"],
+      ["booking", "feedback", "magic-code", "receipt", "reminder", "welcome"],
       ["layout"],
     ]);
   });
@@ -126,6 +126,18 @@ describe("the module it writes", () => {
   it("should resolve a subject written as a copy key through t", () => {
     expect(module).toContain(
       'subject: (fields, { t }) => t("magic-code.subject", { code: fields.code }),',
+    );
+  });
+
+  it("should require a field the subject's copy key names, whatever the body implied", () => {
+    // reminder.hbs asks for activityName only inside an #if, which is inferred optional.
+    // Emitted optional, t() here would be handed a string | undefined and the generated
+    // module would not compile.
+    expect(module).toContain(
+      '"reminder": { addressed: "caller"; from: "notifications"; fields: { activityName: string } };',
+    );
+    expect(module).toContain(
+      'subject: (fields, { t }) => t("reminder.subject", { activityName: fields.activityName }),',
     );
   });
 

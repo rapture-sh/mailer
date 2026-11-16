@@ -1,0 +1,19 @@
+---
+from: notifications
+subject:
+  key: reminder.subject
+sample:
+  activityName: Kayak tour, Lake Thun
+---
+{{!--
+  The subject's copy key names activityName, and the body asks for it only inside an #if.
+  A field inside a conditional is inferred optional, so this letter is what pins the rule
+  that a subject's fields are required whatever the body implied: emitted optional, the
+  generated module would hand t() a string | undefined and stop compiling.
+--}}
+{{#> layout heading=(t "reminder.heading") }}
+  <p>{{ t "greeting.named" displayName=reader.name }}</p>
+  {{#if activityName}}
+    <p>{{ activityName }} starts soon.</p>
+  {{/if}}
+{{/layout}}

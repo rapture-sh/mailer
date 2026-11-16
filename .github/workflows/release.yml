@@ -11,19 +11,20 @@ concurrency:
 permissions:
   contents: read
 
-# Every Linux job here runs on Blacksmith, which needs the Blacksmith GitHub App installed
-# on this repository. Stay on 2vcpu: a job asking for a label this account's plan does not
-# serve, which is any larger size and every `blacksmith-*-arm` label, is accepted and then
-# queues forever rather than failing.
+# This is the one job in the repository that does not run on Blacksmith. The registry
+# refuses a provenance statement built on a self-hosted runner, which is what Blacksmith is
+# as far as it is concerned:
 #
-# Blacksmith also intercepts the Actions cache API, and can answer
-# `400 Default branch not found for repository` for a repository it has not picked up yet,
-# which makes the `actions/setup-node` cache step warn. That is their end. Drop the cache
-# line rather than debugging it.
+#   422 Unprocessable Entity: Error verifying sigstore provenance bundle: Unsupported
+#   GitHub Actions runner environment: "self-hosted". Only "github-hosted" runners are
+#   supported when publishing with provenance.
+#
+# Provenance is most of the point of trusted publishing, so the runner is what gives way.
+# checks.yml is unaffected and stays on Blacksmith.
 jobs:
   release:
     name: Release
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
@@ -48,23 +49,18 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
-      # Opens and maintains the version pull request while changesets are pending. It is
-      # given no `publish` input, because the step below is the publish.
-      - uses: changesets/action@v1
-        with:
-          version: pnpm changeset version
-          commit: "chore: release"
-          title: "chore: release"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+      # Before the version pull request step, not after it. That step runs
+      # `changeset version`, which rewrites package.json in this job's tree to the version
+      # nobody has merged yet, and publishing from that ships it early: the run that merged
+      # the pull request these notes came from tried to publish 0.2.0 straight off main.
+      #
       # npm, because `changeset publish` publishes with pnpm in a pnpm repository and pnpm
       # does not do the OIDC exchange that trusted publishing needs. No NODE_AUTH_TOKEN
       # for the same reason the exchange works at all: an empty one writes an empty auth
       # line into the .npmrc that setup-node generates, and npm tries that first.
       #
-      # The registry is asked about the version first because this step runs on every push
-      # to main, and `npm publish` over a version that is already there fails the job.
+      # The registry is asked about the version first because this runs on every push to
+      # main, and `npm publish` over a version that is already there fails the job.
       - name: Publish
         run: |
           name=$(node -p "require('./package.json').name")
@@ -82,3 +78,13 @@ jobs:
       # The tags are written locally by the step above, and a run that published nothing
       # has none to push, so this does nothing on an ordinary commit.
       - run: git push --tags
+
+      # Opens and maintains the version pull request while changesets are pending. It is
+      # given no `publish` input, because the step above is the publish.
+      - uses: changesets/action@v1
+        with:
+          version: pnpm changeset version
+          commit: "chore: release"
+          title: "chore: release"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

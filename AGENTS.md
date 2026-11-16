@@ -433,6 +433,16 @@ Blacksmith app installed on the repository. Only 2vcpu is served on this account
 size, or any `blacksmith-*-arm` label, is accepted and then queues forever instead of
 failing, which is a slow way to find out.
 
+**The release job is the exception and runs on `ubuntu-latest`.** The registry rejects a
+provenance statement built anywhere but a GitHub hosted runner, and Blacksmith is
+self-hosted as far as it is concerned, so a publish from there fails with `422 ...
+Unsupported GitHub Actions runner environment: "self-hosted"`. Provenance is most of the
+point of trusted publishing, so the runner gives way rather than the provenance.
+
+The publish step runs **before** the step that opens the version pull request, because
+`changeset version` rewrites `package.json` in that same job's tree. Publishing after it
+ships the version nobody has merged, from an ordinary push to `main`.
+
 ## Dependencies and protection
 
 Renovate owns every version update, under one policy shared by every rapture-sh repository:

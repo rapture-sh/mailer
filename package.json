@@ -87,7 +87,7 @@
     "test:types": "vitest run --typecheck.only",
     "test:coverage": "vitest run --coverage",
     "changeset": "changeset",
-    "release": "pnpm build && npm publish && changeset tag",
+    "release": "pnpm build && node scripts/publish.mjs && changeset tag",
     "prepare": "husky"
   },
   "packageManager": "pnpm@10.23.0",

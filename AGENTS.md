@@ -421,4 +421,10 @@ for the tags.
 
 The trusted publisher is configured once in the package's settings on npmjs.com, against
 this repository and `release.yml`, and a package has to exist before it can be configured.
-So version `0.1.0` is published by hand, and every release after it comes from CI.
+So version `0.1.0` was published by hand, and every release after it comes from CI.
+
+`pnpm release` is `scripts/publish.mjs` rather than `npm publish` itself, because the
+action runs the publish command on every push to `main` with no changesets pending. That
+is every push after a release, and `npm publish` has nothing like changesets' check for a
+version that is already on the registry, so it would fail the workflow on the next
+unrelated commit.

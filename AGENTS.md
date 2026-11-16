@@ -415,16 +415,15 @@ merges.
 that for the right to publish this package, which is npm's trusted publishing, and
 provenance comes with it. So the release job holds no `NODE_AUTH_TOKEN` at all: an empty
 one writes an empty auth line into the `.npmrc` that `setup-node` generates, and npm tries
-that before the exchange. `changeset publish` is not the client that speaks OIDC either,
-which is why `pnpm release` is `npm publish` for the one package here and `changeset tag`
-for the tags.
+that before the exchange. `changeset publish` is no use either: in a pnpm repository it
+publishes with pnpm, which does not do the exchange, so the workflow calls `npm publish`
+itself and `changeset git-tag` for the tags.
 
 The trusted publisher is configured once in the package's settings on npmjs.com, against
 this repository and `release.yml`, and a package has to exist before it can be configured.
 So version `0.1.0` was published by hand, and every release after it comes from CI.
 
-`pnpm release` is `scripts/publish.mjs` rather than `npm publish` itself, because the
-action runs the publish command on every push to `main` with no changesets pending. That
-is every push after a release, and `npm publish` has nothing like changesets' check for a
-version that is already on the registry, so it would fail the workflow on the next
+The publish step asks the registry whether the version is already there and stops if it
+is. It runs on every push to `main`, and `npm publish` has nothing like changesets' check
+for a version that is published, so without that it fails the workflow on the next
 unrelated commit.

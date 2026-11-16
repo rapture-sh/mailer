@@ -39,22 +39,37 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
-      # Opens and maintains the version pull request while changesets are pending, then
-      # publishes when that pull request merges and a version is left to release.
-      #
-      # No NODE_AUTH_TOKEN on purpose. Publishing goes through the OIDC exchange that
-      # `id-token: write` above allows, and an empty token here would put an empty auth
-      # line in the .npmrc for npm to try first.
+      # Opens and maintains the version pull request while changesets are pending. It is
+      # given no `publish` input, because the step below is the publish.
       - uses: changesets/action@v1
         with:
           version: pnpm changeset version
-          publish: pnpm release
           commit: "chore: release"
           title: "chore: release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # `changeset tag` writes the tags locally. This changesets version reports them as
-      # "Created git tags:", which is not the shape the action parses, so it does not push
-      # them itself. A run that published nothing has none to push and this does nothing.
+      # npm, because `changeset publish` publishes with pnpm in a pnpm repository and pnpm
+      # does not do the OIDC exchange that trusted publishing needs. No NODE_AUTH_TOKEN
+      # for the same reason the exchange works at all: an empty one writes an empty auth
+      # line into the .npmrc that setup-node generates, and npm tries that first.
+      #
+      # The registry is asked about the version first because this step runs on every push
+      # to main, and `npm publish` over a version that is already there fails the job.
+      - name: Publish
+        run: |
+          name=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+
+          if npm view "$name@$version" version > /dev/null 2>&1; then
+            echo "$name@$version is already published."
+            exit 0
+          fi
+
+          pnpm build
+          npm publish
+          pnpm changeset git-tag
+
+      # The tags are written locally by the step above, and a run that published nothing
+      # has none to push, so this does nothing on an ordinary commit.
       - run: git push --tags

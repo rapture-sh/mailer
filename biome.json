@@ -59,7 +59,7 @@
       }
     },
     {
-      "includes": ["tests/**", "examples/**", "scripts/**"],
+      "includes": ["tests/**", "examples/**"],
       "linter": {
         "rules": {
           "suspicious": {

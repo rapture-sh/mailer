@@ -1,6 +1,6 @@
 {
   "name": "@rapture-sh/mailer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Provider-agnostic, end-to-end type-safe mail for TypeScript, where a provider's capabilities are types rather than runtime flags.",
   "keywords": [
     "email",

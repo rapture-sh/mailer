@@ -52,17 +52,67 @@ describe("createMailer", () => {
     });
   });
 
-  it("should refuse to be built with several senders and no default", () => {
+  it("should refuse to be built with no sender at all", () => {
+    expect(() => createMailer({ provider: memory(), senders: {} })).toThrow(/at least one sender/);
+  });
+});
+
+/**
+ * Nothing needs a default sender until something sends without naming one, so a registry
+ * whose every letter names its own is complete. Insisting on one at construction made a
+ * consumer declare a sender no letter of theirs would ever use.
+ */
+describe("createMailer, the default sender", () => {
+  const senders = { auth: "Acme <auth@example.com>", notifications: "Acme <n@example.com>" };
+
+  function everyLetterNamesOne() {
+    const provider = memory();
+
+    const mailer = createMailer({
+      provider,
+      senders,
+      templates: ({ letter }) => ({
+        "magic-code": letter({ from: "auth", subject: "Code", body: () => ({ text: "519204" }) }),
+      }),
+    });
+
+    return { provider, mailer };
+  }
+
+  it("should not be needed when every letter names its own sender", async () => {
+    const { provider, mailer } = everyLetterNamesOne();
+
+    await mailer.sendTemplate("magic-code", { to: ada });
+
+    expect(provider.sent[0]?.from).toBe("Acme <auth@example.com>");
+  });
+
+  it("should still be needed by a send that names no sender", async () => {
+    const { mailer } = everyLetterNamesOne();
+
+    await expect(mailer.send({ to: ada, subject: "Hello", text: "Hello" })).rejects.toThrow(
+      /no default sender.*auth, notifications/,
+    );
+  });
+
+  it("should leave a send that names one alone", async () => {
+    const { provider, mailer } = everyLetterNamesOne();
+
+    await mailer.send({ from: "notifications", to: ada, subject: "Hello", text: "Hello" });
+
+    expect(provider.sent[0]?.from).toBe("Acme <n@example.com>");
+  });
+
+  it("should be refused at construction when a letter names no sender", () => {
     expect(() =>
       createMailer({
         provider: memory(),
-        senders: { auth: "a@example.com", notifications: "n@example.com" },
+        senders,
+        templates: ({ letter }) => ({
+          welcome: letter({ subject: "Welcome", body: () => ({ text: "Welcome." }) }),
+        }),
       }),
-    ).toThrow(/default sender/);
-  });
-
-  it("should refuse to be built with no sender at all", () => {
-    expect(() => createMailer({ provider: memory(), senders: {} })).toThrow(/at least one sender/);
+    ).toThrow(/'welcome' letter names no sender/);
   });
 });
 

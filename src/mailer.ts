@@ -286,15 +286,8 @@ export function createMailer<
   const loose = config as unknown as LooseConfig;
 
   const names = Object.keys(loose.senders);
-  const fallback = loose.from ?? (names.length === 1 ? names[0] : undefined);
 
-  if (fallback === undefined) {
-    throw new Error(
-      names.length === 0
-        ? "a mailer needs at least one sender"
-        : `'from' has to name the default sender, one of: ${names.join(", ")}`,
-    );
-  }
+  if (names.length === 0) throw new Error("a mailer needs at least one sender");
 
   const registry: LooseRegistry = loose.templates?.(letterBuilder()) ?? {};
   const wrapped = isWrapped(registry);
@@ -303,8 +296,33 @@ export function createMailer<
   const retry: Retry = { ...defaultRetry, ...loose.retry };
   const provider = loose.provider;
   const autoText = loose.autoText ?? true;
+  const fallback = loose.from ?? (names.length === 1 ? names[0] : undefined);
 
-  const addressFor = (key: string): string => {
+  // The registry is built before this on purpose: a mailer whose every letter names its
+  // own sender needs no default, and there is no way to know that until the letters
+  // exist. A letter that names none is what makes a default necessary, so it is named.
+  if (fallback === undefined) {
+    const orphan = Object.entries(letters).find(([, letter]) => letter.from === undefined)?.[0];
+
+    if (orphan !== undefined) {
+      throw new Error(
+        `the '${orphan}' letter names no sender, so 'from' has to name the default one, one of: ${names.join(", ")}`,
+      );
+    }
+  }
+
+  /**
+   * Nothing where a mailer has several senders, no default, and nothing named one. A letter
+   * in that state is refused at construction, so this is the `send` that could not have
+   * worked: it has no letter to fall back on and is told at the call rather than at startup.
+   */
+  const addressFor = (key: string | undefined): string => {
+    if (key === undefined) {
+      throw new Error(
+        `this mailer has no default sender, so 'from' has to name one of: ${names.join(", ")}`,
+      );
+    }
+
     const sender = loose.senders[key];
 
     if (sender === undefined) throw new Error(`no sender named '${key}'`);

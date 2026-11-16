@@ -1,5 +1,5 @@
 ---
-"@rapture-sh/mailer": minor
+"@rapture-sh/mailer": patch
 ---
 
 Four things the first real consumer ran into.

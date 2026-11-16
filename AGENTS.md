@@ -192,6 +192,16 @@ behaving like the same mailer.
 - `retry.ts` is the one place anything sleeps. It reads the kind, not the provider.
 - `capabilities.ts` is the one place an option becomes conditional. Do not write a
   provider-specific `send` overload.
+- **The known limit of that**: `isProduction ? resend(...) : memory()` is typed as the
+  resend provider alone. The memory provider is a structural subtype of it, so TypeScript
+  reduces the union while inferring `TProvider` and the call site is offered `sendAt` and
+  `tags` the memory provider would drop. Reading the common capabilities off the union is
+  correct and useless, because the union is gone before any type of ours sees it; the
+  reduction stops only if a provider's capability list is made invariant, which stops every
+  provider being a `SomeProvider`. It is pinned and explained in
+  `tests/types/provider.test-d.ts`, and it is not to be papered over with a cast. Both
+  documented arrangements avoid it: one provider pointed at two hosts, or a generic
+  `mailerFor(provider)` where each caller gets its own capability set.
 - `template.ts` owns field inference. A caller's field types come from the registry, so
   nothing downstream re-declares them.
 - `text.ts` is the one place html becomes text. It runs on the rendered body in

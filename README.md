@@ -481,6 +481,23 @@ the options you may pass are conditional on it. Asking a backend for something i
 is caught where you write it, rather than coming back as an error response from a code path
 nobody exercised.
 
+**One thing it does not catch**, so you know where the edge is: two *different* providers in
+one expression are typed as the wider of the two.
+
+```ts
+// Typed as resend, because the memory provider is a structural subtype of it, so the
+// capability types do not notice that one half of this cannot schedule.
+provider: isProduction ? resend({ apiKey }) : memory();
+```
+
+TypeScript reduces that union while inferring, so the common capabilities are gone before
+any type here can read them, and the only way to stop the reduction would stop every
+provider being a provider. Neither arrangement this README recommends runs into it: the swap
+above is one provider pointed at two hosts, and a mailer that
+[takes its provider from outside](#testing-without-sending-anything) is generic, so each
+caller gets the exact capability set of the provider it passed. Mixing two providers in one
+expression is the case to avoid.
+
 
 Results and errors
 ------------------

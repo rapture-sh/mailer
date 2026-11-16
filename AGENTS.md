@@ -443,6 +443,11 @@ The publish step runs **before** the step that opens the version pull request, b
 `changeset version` rewrites `package.json` in that same job's tree. Publishing after it
 ships the version nobody has merged, from an ordinary push to `main`.
 
+It tags with `git tag "v$version"` rather than `changeset git-tag`. That command reads what
+to tag out of `@manypkg/get-packages`, which finds no packages in a repository with no
+`pnpm-workspace.yaml`, so it exits 0 having tagged nothing: `v0.1.1` had to be pushed by
+hand. Nothing in the release path needs changesets except the version pull request itself.
+
 ## Dependencies and protection
 
 Renovate owns every version update, under one policy shared by every rapture-sh repository:

@@ -73,10 +73,16 @@ jobs:
 
           pnpm build
           npm publish
-          pnpm changeset git-tag
 
-      # The tags are written locally by the step above, and a run that published nothing
-      # has none to push, so this does nothing on an ordinary commit.
+          # git rather than `changeset git-tag`, which builds its list of what to tag from
+          # @manypkg/get-packages. There is no pnpm-workspace.yaml here, so that finds no
+          # packages, reports "Did not find any packages that need to be tagged" and exits
+          # 0: the 0.1.1 release went out untagged and the push below had nothing to send.
+          # The version is already in hand here anyway.
+          git tag "v$version"
+
+      # The tag is written locally by the step above, and a run that published nothing has
+      # none to push, so this does nothing on an ordinary commit.
       - run: git push --tags
 
       # Opens and maintains the version pull request while changesets are pending. It is

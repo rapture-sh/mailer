@@ -1,7 +1,7 @@
 import type { Capability, MessageOptions } from "./capabilities";
 import { type CopyConfig, formattersFor, type LocaleOf, translate } from "./copy";
 import type { Attachment, MailMessage, Recipient } from "./message";
-import type { CapabilitiesOf, OptionsOf, Provider, SomeProvider } from "./provider";
+import type { CommonCapabilitiesOf, CommonOptionsOf, Provider, SomeProvider } from "./provider";
 import type { MailResult } from "./result";
 import { defaultRetry, type Retry, withRetry } from "./retry";
 import {
@@ -273,7 +273,12 @@ export function createMailer<
   const TRegistry extends object = NoLetters,
 >(
   config: MailerConfig<TProvider, TSenders, TRegistry>,
-): Mailer<keyof TSenders & string, TRegistry, CapabilitiesOf<TProvider>, OptionsOf<TProvider>> {
+): Mailer<
+  keyof TSenders & string,
+  TRegistry,
+  CommonCapabilitiesOf<TProvider>,
+  CommonOptionsOf<TProvider>
+> {
   // The two assertions in this function are the boundary between a public type that
   // depends on the provider and the registry, and an implementation that cannot be
   // written generically over either. They are the only ones in src/, and the type tests
@@ -417,7 +422,7 @@ export function createMailer<
   return mailer as unknown as Mailer<
     keyof TSenders & string,
     TRegistry,
-    CapabilitiesOf<TProvider>,
-    OptionsOf<TProvider>
+    CommonCapabilitiesOf<TProvider>,
+    CommonOptionsOf<TProvider>
   >;
 }

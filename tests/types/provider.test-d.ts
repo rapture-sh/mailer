@@ -1,8 +1,10 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { createMailer } from "~/mailer";
+import type { NoOptions, Provider } from "~/provider";
 import { memory } from "~/providers/memory";
 import { mockResend } from "~/providers/mock-resend";
 import { resend } from "~/providers/resend";
+import { templates } from "../build/generated/templates";
 
 const ada = { email: "ada@example.com" };
 
@@ -95,5 +97,58 @@ describe("the memory provider's own capabilities", () => {
     expectTypeOf(memory().capabilities).toEqualTypeOf<
       readonly ("attachments" | "idempotency" | "replyTo" | "headers")[]
     >();
+  });
+});
+
+/**
+ * A provider union that TypeScript does not reduce, which is the case the common capability
+ * types exist for: `maxBytes` is optional and these two disagree about it, so the union
+ * survives and the capabilities are read as what both can do.
+ */
+const noFiles: Provider<"headers", NoOptions> = {
+  name: "no-files",
+  capabilities: ["headers"],
+  send: () => Promise.resolve({ ok: true, id: "1" }),
+};
+
+declare const production: boolean;
+
+const whichever = createMailer({
+  provider: production ? noFiles : memory(),
+  senders: { auth: "Acme <auth@example.com>", notifications: senders.notifications },
+  from: "notifications",
+  templates,
+});
+
+describe("a union of providers that is not reduced", () => {
+  it("should offer only the capabilities both declare", async () => {
+    await whichever.send({
+      to: ada,
+      subject: "Hi",
+      text: "Hi",
+      headers: { "X-Entity-Ref-ID": "REF-1" },
+    });
+  });
+
+  it("should refuse a capability only one of them has", async () => {
+    await whichever.send({
+      to: ada,
+      subject: "Hi",
+      text: "Hi",
+      // @ts-expect-error the no-files provider declares nothing but headers
+      idempotencyKey: "once",
+    });
+  });
+
+  it("should refuse a letter that attaches when one of them cannot", async () => {
+    await whichever.sendTemplate(
+      // @ts-expect-error receipt.hbs attaches a logo and the no-files provider cannot
+      "receipt",
+      { to: ada, fields: { reference: "REF-1", invoice: { filename: "i.pdf", content: "x" } } },
+    );
+  });
+
+  it("should still offer the letters that attach nothing", async () => {
+    await whichever.sendTemplate("magic-code", { to: ada, fields: { code: "519204" } });
   });
 });

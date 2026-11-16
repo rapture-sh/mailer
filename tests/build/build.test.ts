@@ -383,3 +383,58 @@ describe("a letter's attachments", () => {
     );
   });
 });
+
+describe("a field name that would not read as a property", () => {
+  async function letters(header: string, body: string) {
+    const directory = await mkdtemp(join(tmpdir(), "mailer-names-"));
+
+    await writeFile(join(directory, "logo.png"), "Acme", "utf8");
+    await writeFile(join(directory, "note.hbs"), `---\n${header}\n---\n${body}`, "utf8");
+
+    return { directory, out: join(directory, "templates.ts") };
+  }
+
+  it("should refuse an attachment field that is not an identifier", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - field: my-invoice",
+      "<p>Hi</p>\n",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'my-invoice' cannot be the name of a field/,
+    );
+  });
+
+  it("should refuse one a placeholder named, which handlebars accepts and TypeScript cannot", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nsample:\n  odd-one: x",
+      "<p>{{ odd-one }}</p>\n",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'odd-one' cannot be the name of a field/,
+    );
+  });
+
+  it("should refuse one the header declared a type for", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nfields:\n  2fa: string\nsample:\n  2fa: x",
+      "<p>Hi</p>\n",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'2fa' cannot be the name of a field/,
+    );
+  });
+
+  it("should take a name with an underscore or a digit in it", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nsample:\n  code_2: x",
+      "<p>{{ code_2 }}</p>\n",
+    );
+
+    const result = await build({ letters: directory, out });
+
+    expect(result.written).toBe(true);
+  });
+});

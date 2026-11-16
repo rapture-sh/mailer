@@ -481,22 +481,34 @@ the options you may pass are conditional on it. Asking a backend for something i
 is caught where you write it, rather than coming back as an error response from a code path
 nobody exercised.
 
-**One thing it does not catch**, so you know where the edge is: two *different* providers in
-one expression are typed as the wider of the two.
+**Two things it does not catch**, so you know where the edge is.
+
+**A provider union that TypeScript reduces.** Configure two providers in one expression and
+the call site is normally held to what both of them can do, which is what you want: pair
+Resend with a provider of your own that declares fewer capabilities, and only the shared
+ones are offered.
+
+The exception is a pair where one provider happens to be assignable to the other, as
+`resend` and `memory` are. TypeScript reduces that union to the wider one before any type
+here can read it, so `isProduction ? resend({ apiKey }) : memory()` is typed as `resend`
+alone and offers `sendAt` that the memory provider would drop. The only way to stop the
+reduction would stop every provider being a provider. Neither arrangement this README
+recommends runs into it: the swap above is one provider pointed at two hosts, and a mailer
+that [takes its provider from outside](#testing-without-sending-anything) is generic, so
+each caller gets the exact capability set of the provider it passed.
+
+**An options object that is not written at the call.** TypeScript only reports an unexpected
+property on a fresh object literal, so a capability you cannot use is caught when you write
+it inline and not when it arrives in a variable:
 
 ```ts
-// Typed as resend, because the memory provider is a structural subtype of it, so the
-// capability types do not notice that one half of this cannot schedule.
-provider: isProduction ? resend({ apiKey }) : memory();
+mailer.send({ to, subject, text, sendAt });   // caught
+const args = { to, subject, text, sendAt };
+mailer.send(args);                            // not caught
 ```
 
-TypeScript reduces that union while inferring, so the common capabilities are gone before
-any type here can read them, and the only way to stop the reduction would stop every
-provider being a provider. Neither arrangement this README recommends runs into it: the swap
-above is one provider pointed at two hosts, and a mailer that
-[takes its provider from outside](#testing-without-sending-anything) is generic, so each
-caller gets the exact capability set of the provider it passed. Mixing two providers in one
-expression is the case to avoid.
+That is how excess property checking works everywhere in TypeScript rather than anything
+specific here, and it is the one place these guarantees rest on how the call is written.
 
 
 Results and errors
@@ -605,10 +617,11 @@ await mailer.sendTemplate("receipt", {
 });
 ```
 
-The letter's own attachments go out first, then whatever you passed at the call site. A
-provider that cannot send attachments at all makes the mailer itself fail to compile, since
-a letter's attachments never pass through the call site where the capability is usually
-checked.
+The letter's own attachments go out first, then whatever you passed at the call site.
+
+A letter's attachments never pass through the call site, so the capability is checked on the
+letter's name instead: a provider that cannot send attachments simply does not offer those
+letters, and `sendTemplate("receipt", ...)` is where it stops compiling.
 
 
 A plain text part, for free
@@ -628,6 +641,11 @@ It runs on the rendered html, so the text carries the same field values the html
 cannot drift from it. A letter that renders its own `text` keeps it, `send` is left alone
 because a caller passing html meant that message, and `autoText: false` on `createMailer`
 turns it off.
+
+The converter is exported as `textFromHtml` if you want it for something else. It handles
+the markup an email body is made of rather than being a general html to text converter, and
+drops what it does not know instead of guessing: a letter must not fail to send over its own
+markup.
 
 
 Examples

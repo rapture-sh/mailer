@@ -313,6 +313,24 @@ function checkCopyUses(uses: readonly CopyUse[], copy: LoadedCopy | undefined): 
   }
 }
 
+/**
+ * Every field name reaches the generated module as a property, written and read unquoted, so
+ * a name that is not an identifier would emit a module that does not parse. Handlebars is
+ * happy with `{{ my-field }}` and a header may declare anything at all, which is why this is
+ * checked here rather than assumed.
+ */
+const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+
+function checkFieldNames(fields: Fields): void {
+  for (const name of Object.keys(fields)) {
+    if (IDENTIFIER.test(name)) continue;
+
+    throw new Error(
+      `'${name}' cannot be the name of a field: it has to read as a property in the generated module, so letters, digits, _ and $ only, and not starting with a digit`,
+    );
+  }
+}
+
 function checkLetter(
   header: LetterHeader,
   fields: Fields,
@@ -326,6 +344,8 @@ function checkLetter(
       `from: '${header.from}' is not a sender. Expected one of: ${senders.join(", ")}`,
     );
   }
+
+  checkFieldNames(fields);
 
   if (header.replyTo !== undefined && fields[header.replyTo] === undefined) {
     throw new Error(`reply-to: '${header.replyTo}' is not a field of this letter`);

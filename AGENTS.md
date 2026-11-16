@@ -193,16 +193,22 @@ behaving like the same mailer.
 - `retry.ts` is the one place anything sleeps. It reads the kind, not the provider.
 - `capabilities.ts` is the one place an option becomes conditional. Do not write a
   provider-specific `send` overload.
-- **The known limit of that**: `isProduction ? resend(...) : memory()` is typed as the
-  resend provider alone. The memory provider is a structural subtype of it, so TypeScript
-  reduces the union while inferring `TProvider` and the call site is offered `sendAt` and
-  `tags` the memory provider would drop. Reading the common capabilities off the union is
-  correct and useless, because the union is gone before any type of ours sees it; the
+- **A union of providers is read as what they all can do**, by `CommonCapabilitiesOf` and
+  `CommonOptionsOf` in `provider.ts`, not as the sum. The sum would offer `sendAt` because
+  one member can schedule, and would let a letter's attachments past the gate in
+  `SendableNames` because one member can attach, while the other dropped both in silence.
+- **The known limit of that**: where one provider happens to be assignable to the other, as
+  `resend` and `memory` are, TypeScript reduces the union to the wider one before those
+  types see it, and `isProduction ? resend(...) : memory()` is typed as `resend` alone. The
   reduction stops only if a provider's capability list is made invariant, which stops every
   provider being a `SomeProvider`. It is pinned and explained in
   `tests/types/provider.test-d.ts`, and it is not to be papered over with a cast. Both
   documented arrangements avoid it: one provider pointed at two hosts, or a generic
   `mailerFor(provider)` where each caller gets its own capability set.
+- The other place a guarantee rests on something outside the types: TypeScript reports an
+  unexpected property only on a fresh object literal, so `send(args)` with a prepared
+  `args` object is not checked for a capability it may not have. Documented in the README
+  under what the compiler does not catch.
 - `template.ts` owns field inference. A caller's field types come from the registry, so
   nothing downstream re-declares them.
 - `text.ts` is the one place html becomes text. It runs on the rendered body in

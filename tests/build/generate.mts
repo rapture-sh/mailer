@@ -7,7 +7,11 @@ import { build } from "../../src/build/index";
  * `generated.test.ts` renders.
  *
  *   pnpm fixtures:build
- *   pnpm fixtures:check     # what CI runs: fails when the committed output is stale
+ *   pnpm fixtures:check     # writes nothing and fails when the committed output is stale
+ *
+ * Nothing in CI calls this. `build.test.ts` rebuilds the fixtures into `generated/` and
+ * asserts it had nothing to write, so a stale commit of that directory fails the suite the
+ * way a snapshot does. This is the direct way to rewrite it.
  *
  * The letters are passed as a path relative to the repository root, because it ends up in
  * the generated file's header and an absolute one would differ per machine.

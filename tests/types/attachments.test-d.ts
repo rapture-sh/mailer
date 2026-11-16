@@ -3,6 +3,7 @@ import { createMailer } from "~/mailer";
 import type { Attachment } from "~/message";
 import type { NoOptions, Provider, SomeProvider } from "~/provider";
 import { memory } from "~/providers/memory";
+import { defineTemplates } from "~/template";
 import { templates } from "../build/generated/templates";
 
 const ada = { email: "ada@example.com" };
@@ -139,6 +140,63 @@ describe("autoText", () => {
       from: "notifications",
       // @ts-expect-error autoText is on or off, not a mode
       autoText: "never",
+    });
+  });
+});
+
+/**
+ * A generated module states what each letter carries twice: in its spec, which the mailer
+ * reads, and in the letter entry itself, which does the carrying. They have to agree, or a
+ * file passes the capability gate and is dropped, or a type promises a function that is not
+ * there. The build writes both from one source; these cover the hand written module.
+ */
+describe("a generated registry that contradicts itself", () => {
+  const html = (context: Record<string, unknown>) => `<p>${String(context.note)}</p>`;
+
+  it("should refuse a letter that attaches more than its spec declares", () => {
+    defineTemplates<{ sneak: { addressed: "caller"; fields: { note: string } } }>({
+      letters: {
+        sneak: {
+          addressed: "caller",
+          subject: "Sneak",
+          html,
+          // @ts-expect-error the spec for this letter does not say it attaches anything
+          attachments: () => [invoice],
+          sample: { note: "hi" },
+        },
+      },
+    });
+  });
+
+  it("should refuse a letter whose spec promises attachments it has not got", () => {
+    defineTemplates<{
+      promised: { addressed: "caller"; attachments: true; fields: { note: string } };
+    }>({
+      letters: {
+        // @ts-expect-error the spec says this letter attaches, and the entry has nothing
+        promised: {
+          addressed: "caller",
+          subject: "Promised",
+          html,
+          sample: { note: "hi" },
+        },
+      },
+    });
+  });
+
+  it("should take a letter that attaches exactly what its spec declares", () => {
+    defineTemplates<{
+      honest: { addressed: "caller"; attachments: true; fields: { note: string } };
+    }>({
+      letters: {
+        honest: {
+          addressed: "caller",
+          subject: "Honest",
+          html,
+          attachments: () => [invoice],
+          sample: { note: "hi" },
+        },
+      },
     });
   });
 });

@@ -54,7 +54,8 @@ const NAMED: Readonly<Record<string, string>> = {
 };
 
 function decodeEntities(text: string): string {
-  return text.replace(/&(#x?[0-9a-f]+|[a-z][a-z0-9]*);/gi, (whole, body: string) => {
+  // The parameters are typed here rather than left to the lib's `...args: any[]`.
+  return text.replace(/&(#x?[0-9a-f]+|[a-z][a-z0-9]*);/gi, (whole: string, body: string) => {
     if (body.startsWith("#")) {
       const digits = body.slice(1);
       const code =
@@ -84,8 +85,17 @@ function stripTags(html: string): string {
  * link does not come out twice.
  */
 function unwrapAnchors(html: string): string {
-  return html.replace(ANCHOR, (_whole, _quoted, double, single, unquoted, inner: string) => {
-    const href = String(double ?? single ?? unquoted ?? "").trim();
+  // A capture group that did not take part is `undefined`, which is why the href is read
+  // through a chain of them rather than from one place.
+  const unwrap = (
+    _whole: string,
+    _quoted: string | undefined,
+    double: string | undefined,
+    single: string | undefined,
+    unquoted: string | undefined,
+    inner: string,
+  ): string => {
+    const href = (double ?? single ?? unquoted ?? "").trim();
     const label = decodeEntities(stripTags(inner)).replace(/\s+/g, " ").trim();
     // A mail link reads as the address itself, so it is not worth printing twice.
     const address = href.replace(/^mailto:/i, "");
@@ -95,7 +105,9 @@ function unwrapAnchors(html: string): string {
     if (label === href || label === address) return label;
 
     return `${label} (${href})`;
-  });
+  };
+
+  return html.replace(ANCHOR, unwrap);
 }
 
 function tidy(text: string): string {

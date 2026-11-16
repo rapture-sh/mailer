@@ -216,8 +216,8 @@ export function emitModules(options: EmitOptions): EmittedModules {
     // The sender is written into the type as well as the value, so a mailer whose senders
     // do not include it fails to compile.
     const from = letter.header.from === undefined ? "" : `from: ${quote(letter.header.from)}; `;
-    // Written into the type as well, so a provider that cannot send an attachment fails to
-    // compile where the mailer is built rather than dropping the file at send time.
+    // Written into the type as well, so a provider that cannot send an attachment does not
+    // offer this letter to `sendTemplate` rather than dropping the file at send time.
     const attached = letter.attachments.length === 0 ? "" : "attachments: true; ";
 
     return `${INDENT}${quote(letter.name)}: { addressed: ${addressed}; ${from}${attached}fields: ${fieldsType(

@@ -157,8 +157,20 @@ export type GeneratedSpec = Record<
 /** The sender a generated entry names, or nothing where it named none. */
 type FromIn<TEntry> = TEntry extends { from: infer TFrom extends string } ? TFrom : never;
 
+/**
+ * The letters a generated module hands over, tied to what its spec says they carry.
+ *
+ * Both halves declare attachments and nothing but this stops them disagreeing: a spec entry
+ * without `attachments: true` whose letter attaches a file anyway would pass the capability
+ * gate in `SendableNames` and have the file dropped, and the mirror case would promise a
+ * function that is not there. The build emits both from one source so it cannot write
+ * either, but `defineTemplates` is public and a hand written module can.
+ */
 export type GeneratedLetters<TSpec extends GeneratedSpec> = {
-  [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]>;
+  [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]> &
+    (TSpec[K] extends { attachments: true }
+      ? { attachments: (fields: TSpec[K]["fields"]) => readonly Attachment[] }
+      : { attachments?: never });
 };
 
 /**

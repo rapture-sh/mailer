@@ -269,6 +269,25 @@ describe("mailer.sendTemplate", () => {
     expect(provider.sent[0]).not.toHaveProperty("replyTo");
   });
 
+  it("should set reply-to from the call when the letter asks for none", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("welcome", { to: ada, replyTo: "concierge@example.com" });
+
+    expect(provider.sent[0]?.replyTo).toBe("concierge@example.com");
+  });
+
+  it("should let the call's reply-to win over the letter's own", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("feedback", {
+      fields: { note: "The map is slow", email: "host@example.com" },
+      replyTo: "concierge@example.com",
+    });
+
+    expect(provider.sent[0]?.replyTo).toBe("concierge@example.com");
+  });
+
   it("should return the error a provider answered with", async () => {
     const { provider, mailer } = setup();
 

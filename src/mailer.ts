@@ -426,7 +426,9 @@ export function createMailer<
         reader,
         subject,
         withText(letter.body(fields, context)),
-        letter.replyTo?.(fields, context),
+        // The call wins over the letter's own: a letter declares where a reply belongs in
+        // general, and a send that passes one knows better for this message.
+        args.replyTo ?? letter.replyTo?.(fields, context),
         args,
         // The letter's own first, then the caller's, so a receipt keeps its logo above
         // whatever was passed in beside it.

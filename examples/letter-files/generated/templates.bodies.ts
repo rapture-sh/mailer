@@ -25,6 +25,11 @@ for (const [name, partial] of Object.entries(partials)) {
   runtime.registerPartial(name, partial);
 }
 
+/** Every file a letter's header attached, base64 as the providers take it. */
+export const files = {
+  "receipt/logo.png": "iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAIAAABvFaqvAAAAH0lEQVR42mOQt4qnCmIYNWjUoFGDRg0aNWjUoIE3CABx0J4Q8jDr/wAAAABJRU5ErkJggg==",
+};
+
 export const bodies = {
   "magic-code": runtime.template({"0":function(container,depth0,helpers,partials,data) {
     var stack1, helper, alias1=container.escapeExpression, lookupProperty = container.lookupProperty || function(parent, propertyName) {
@@ -57,18 +62,18 @@ export const bodies = {
         return undefined
     };
 
-  return "  <tr>\n    <td style=\"padding: 20px 32px 0; font-size: 15px\">\n      "
-    + alias4(((helper = (helper = lookupProperty(helpers,"activityName") || (depth0 != null ? lookupProperty(depth0,"activityName") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"activityName","hash":{},"data":data,"loc":{"start":{"line":8,"column":6},"end":{"line":8,"column":24}}}) : helper)))
+  return "  <tr>\n    <td style=\"padding: 20px 32px 0\"><img src=\"cid:logo\" width=\"24\" height=\"24\" alt=\"Acme\"></td>\n  </tr>\n  <tr>\n    <td style=\"padding: 20px 32px 0; font-size: 15px\">\n      "
+    + alias4(((helper = (helper = lookupProperty(helpers,"activityName") || (depth0 != null ? lookupProperty(depth0,"activityName") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"activityName","hash":{},"data":data,"loc":{"start":{"line":11,"column":6},"end":{"line":11,"column":24}}}) : helper)))
     + " for "
-    + alias4(((helper = (helper = lookupProperty(helpers,"participants") || (depth0 != null ? lookupProperty(depth0,"participants") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"participants","hash":{},"data":data,"loc":{"start":{"line":8,"column":29},"end":{"line":8,"column":47}}}) : helper)))
+    + alias4(((helper = (helper = lookupProperty(helpers,"participants") || (depth0 != null ? lookupProperty(depth0,"participants") : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"participants","hash":{},"data":data,"loc":{"start":{"line":11,"column":29},"end":{"line":11,"column":47}}}) : helper)))
     + " people, "
-    + alias4((lookupProperty(helpers,"dateTime")||(depth0 && lookupProperty(depth0,"dateTime"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"startsAt") : depth0),{"name":"dateTime","hash":{"zone":(depth0 != null ? lookupProperty(depth0,"timezone") : depth0)},"data":data,"loc":{"start":{"line":8,"column":56},"end":{"line":8,"column":93}}}))
+    + alias4((lookupProperty(helpers,"dateTime")||(depth0 && lookupProperty(depth0,"dateTime"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"startsAt") : depth0),{"name":"dateTime","hash":{"zone":(depth0 != null ? lookupProperty(depth0,"timezone") : depth0)},"data":data,"loc":{"start":{"line":11,"column":56},"end":{"line":11,"column":93}}}))
     + ".\n    </td>\n  </tr>\n  <tr>\n    <td style=\"padding: 12px 32px 0; font-size: 15px\">"
-    + alias4((lookupProperty(helpers,"list")||(depth0 && lookupProperty(depth0,"list"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"tickets") : depth0),{"name":"list","hash":{},"data":data,"loc":{"start":{"line":12,"column":54},"end":{"line":12,"column":72}}}))
+    + alias4((lookupProperty(helpers,"list")||(depth0 && lookupProperty(depth0,"list"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"tickets") : depth0),{"name":"list","hash":{},"data":data,"loc":{"start":{"line":15,"column":54},"end":{"line":15,"column":72}}}))
     + "</td>\n  </tr>\n  <tr>\n    <td style=\"padding: 12px 32px 28px; font-size: 15px\">\n      You paid "
-    + alias4((lookupProperty(helpers,"money")||(depth0 && lookupProperty(depth0,"money"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"totalMinor") : depth0),(depth0 != null ? lookupProperty(depth0,"currency") : depth0),{"name":"money","hash":{},"data":data,"loc":{"start":{"line":16,"column":15},"end":{"line":16,"column":46}}}))
+    + alias4((lookupProperty(helpers,"money")||(depth0 && lookupProperty(depth0,"money"))||alias2).call(alias1,(depth0 != null ? lookupProperty(depth0,"totalMinor") : depth0),(depth0 != null ? lookupProperty(depth0,"currency") : depth0),{"name":"money","hash":{},"data":data,"loc":{"start":{"line":19,"column":15},"end":{"line":19,"column":46}}}))
     + ".\n      "
-    + ((stack1 = lookupProperty(helpers,"if").call(alias1,(depth0 != null ? lookupProperty(depth0,"voucherCode") : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data,"loc":{"start":{"line":17,"column":6},"end":{"line":17,"column":70}}})) != null ? stack1 : "")
+    + ((stack1 = lookupProperty(helpers,"if").call(alias1,(depth0 != null ? lookupProperty(depth0,"voucherCode") : depth0),{"name":"if","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data,"loc":{"start":{"line":20,"column":6},"end":{"line":20,"column":70}}})) != null ? stack1 : "")
     + "\n    </td>\n  </tr>\n";
 },"1":function(container,depth0,helpers,partials,data) {
     var helper, lookupProperty = container.lookupProperty || function(parent, propertyName) {
@@ -79,7 +84,7 @@ export const bodies = {
     };
 
   return "Voucher "
-    + container.escapeExpression(((helper = (helper = lookupProperty(helpers,"voucherCode") || (depth0 != null ? lookupProperty(depth0,"voucherCode") : depth0)) != null ? helper : container.hooks.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"voucherCode","hash":{},"data":data,"loc":{"start":{"line":17,"column":33},"end":{"line":17,"column":50}}}) : helper)))
+    + container.escapeExpression(((helper = (helper = lookupProperty(helpers,"voucherCode") || (depth0 != null ? lookupProperty(depth0,"voucherCode") : depth0)) != null ? helper : container.hooks.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"voucherCode","hash":{},"data":data,"loc":{"start":{"line":20,"column":33},"end":{"line":20,"column":50}}}) : helper)))
     + " was applied.";
 },"compiler":[8,">= 4.3.0"],"main":function(container,depth0,helpers,partials,data) {
     var stack1, lookupProperty = container.lookupProperty || function(parent, propertyName) {

@@ -191,3 +191,15 @@ describe("README: retries", () => {
     expectTypeOf(mailer.provider).toEqualTypeOf<string>();
   });
 });
+
+describe("README: a plain text part, for free", () => {
+  it("should take autoText as printed", () => {
+    const mailer = createMailer({
+      provider: memory(),
+      senders: { hello: "Acme <hello@acme.example>" },
+      autoText: false,
+    });
+
+    expectTypeOf(mailer.provider).toEqualTypeOf<string>();
+  });
+});

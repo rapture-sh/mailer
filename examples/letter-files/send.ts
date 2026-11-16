@@ -29,6 +29,13 @@ await mailer.sendTemplate("receipt", {
   to: reader,
   fields: {
     reference: "REF-4182",
+    // Required because receipt.hbs declares it as an attachment the caller passes. Leave
+    // it out and this stops compiling.
+    invoice: {
+      filename: "invoice.pdf",
+      content: new TextEncoder().encode("Acme invoice REF-4182"),
+      contentType: "application/pdf",
+    },
     activityName: "Kayak tour, Lake Thun",
     participants: 3,
     startsAt: new Date("2026-07-02T08:00:00.000Z"),
@@ -42,16 +49,20 @@ await mailer.sendTemplate("receipt", {
   },
 });
 
-/** The markup stripped out, so a letter reads in a terminal. */
-const readable = (body: string | undefined): string =>
-  (body ?? "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
 for (const message of provider.sent) {
+  const files = message.attachments ?? [];
+
   console.log(`${message.from} -> ${message.to.email}`);
   console.log(`  subject  ${message.subject}`);
-  console.log(`  body     ${readable(message.html).slice(0, 140)}`);
+  // Neither letter declares a text body. This is the one the mailer derived from the
+  // html, which is what a reader on a client that shows no markup gets.
+  const text = (message.text ?? "").replaceAll("\n\n", "\n").replaceAll("\n", " / ");
+
+  console.log(`  text     ${text.slice(0, 140)}`);
+
+  if (files.length > 0) {
+    console.log(`  files    ${files.map((file) => file.filename).join(", ")}`);
+  }
+
   console.log("");
 }

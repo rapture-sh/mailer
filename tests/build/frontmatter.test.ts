@@ -36,6 +36,10 @@ describe("parseHeader", () => {
       "reply-to: email",
       "fields:",
       "  count: number",
+      "attachments:",
+      "  - path: ../assets/logo.png",
+      "    cid: logo",
+      "  - field: invoice",
       "sample:",
       "  email: ada@example.com",
     ].join("\n");
@@ -46,6 +50,16 @@ describe("parseHeader", () => {
       subject: { text: "Hi" },
       replyTo: "email",
       fields: { count: "number" },
+      attachments: [
+        {
+          kind: "file",
+          path: "../assets/logo.png",
+          filename: undefined,
+          contentType: undefined,
+          cid: "logo",
+        },
+        { kind: "field", field: "invoice", optional: false },
+      ],
       sample: { email: "ada@example.com" },
     });
   });
@@ -63,6 +77,7 @@ describe("parseHeader", () => {
       subject: { text: "Hi" },
       replyTo: undefined,
       fields: {},
+      attachments: [],
       sample: undefined,
     });
   });

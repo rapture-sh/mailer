@@ -1,0 +1,16 @@
+---
+from: notifications
+subject: Receipt {reference}
+attachments:
+  - path: assets/logo.png
+    cid: logo
+  - field: invoice
+  - field: terms
+    optional: true
+sample:
+  reference: REF-4182
+---
+{{#> layout heading="Receipt" }}
+  <p>Receipt {{ reference }} is attached.</p>
+  <p><img src="cid:logo" alt="Acme"></p>
+{{/layout}}

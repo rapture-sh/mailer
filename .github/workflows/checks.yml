@@ -98,3 +98,34 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm check:exports
+
+  # The provider against a real Resend compatible API, including the errors it answers
+  # with. A stubbed fetch can only prove what we already believed about those bodies.
+  integration:
+    name: Integration
+    runs-on: ubuntu-latest
+    services:
+      mock-resend:
+        image: raptureoss/mock-resend:latest
+        ports:
+          - 9100:9100
+        # Without this the job starts the container and carries on, and the suite would
+        # skip itself into a green job that tested nothing.
+        options: >-
+          --health-cmd "/usr/local/bin/mock-resend --healthcheck"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:integration
+        env:
+          MOCK_RESEND_URL: http://localhost:9100
+          # Fail rather than skip: see tests/integration/mock-resend.ts.
+          MOCK_RESEND_REQUIRED: "1"

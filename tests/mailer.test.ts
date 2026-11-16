@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createMailer } from "~/mailer";
+import type { Attachment } from "~/message";
 import { memory } from "~/providers/memory";
 import { defineTemplates, type NoFields } from "~/template";
 
@@ -239,5 +240,110 @@ describe("mailer.sendTemplate", () => {
         email: ada.email,
       },
     });
+  });
+});
+
+describe("a letter that attaches something of its own", () => {
+  const logo = { filename: "logo.png", content: "QWNtZQ==", inline: { cid: "logo" } };
+
+  function attaching(autoText?: boolean) {
+    const provider = memory();
+
+    const mailer = createMailer({
+      provider,
+      senders: { notifications: "Acme <notifications@example.com>" },
+      ...(autoText === undefined ? {} : { autoText }),
+      templates: ({ letter }) => ({
+        receipt: letter<{ reference: string; invoice: Attachment }>({
+          subject: (fields) => `Receipt ${fields.reference}`,
+          body: (fields) => ({
+            html: `<p>Receipt ${fields.reference}</p><img src="cid:logo" alt="Acme">`,
+          }),
+          attachments: (fields) => [logo, fields.invoice],
+        }),
+      }),
+    });
+
+    return { provider, mailer };
+  }
+
+  const invoice = { filename: "invoice.pdf", content: "JVBERi0=" };
+
+  it("should attach its own and the caller's, in that order", async () => {
+    const { provider, mailer } = attaching();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-1", invoice },
+      attachments: [{ filename: "extra.txt", content: "eA==" }],
+    });
+
+    expect(provider.sent[0]?.attachments?.map((one) => one.filename)).toEqual([
+      "logo.png",
+      "invoice.pdf",
+      "extra.txt",
+    ]);
+  });
+
+  it("should derive the text part from the html it rendered", async () => {
+    const { provider, mailer } = attaching();
+
+    await mailer.sendTemplate("receipt", { to: ada, fields: { reference: "REF-1", invoice } });
+
+    expect(provider.sent[0]?.text).toBe("Receipt REF-1");
+  });
+
+  it("should send no text part at all when autoText is off", async () => {
+    const { provider, mailer } = attaching(false);
+
+    await mailer.sendTemplate("receipt", { to: ada, fields: { reference: "REF-1", invoice } });
+
+    expect(provider.sent[0]).not.toHaveProperty("text");
+  });
+
+  it("should leave a message sent with send alone, which the caller wrote themselves", async () => {
+    const { provider, mailer } = attaching();
+
+    await mailer.send({ to: ada, subject: "Hi", html: "<p>Hi</p>" });
+
+    expect(provider.sent[0]).not.toHaveProperty("text");
+  });
+
+  it("should keep the text a letter rendered for itself", async () => {
+    const provider = memory();
+
+    const mailer = createMailer({
+      provider,
+      senders: { notifications: "Acme <notifications@example.com>" },
+      templates: ({ letter }) => ({
+        both: letter({
+          subject: "Both",
+          body: () => ({ html: "<p>Markup</p>", text: "Written by hand" }),
+        }),
+      }),
+    });
+
+    await mailer.sendTemplate("both", { to: ada });
+
+    expect(provider.sent[0]?.text).toBe("Written by hand");
+  });
+
+  it("should send no text part for markup that carried no words", async () => {
+    const provider = memory();
+
+    const mailer = createMailer({
+      provider,
+      senders: { notifications: "Acme <notifications@example.com>" },
+      templates: ({ letter }) => ({
+        pixel: letter({
+          subject: "Pixel",
+          body: () => ({ html: '<img src="cid:logo" alt="">' }),
+        }),
+      }),
+    });
+
+    await mailer.sendTemplate("pixel", { to: ada });
+
+    expect(provider.sent[0]).not.toHaveProperty("text");
   });
 });

@@ -22,8 +22,11 @@ the way a caller does, and `src/build/` turns letter files into a typed registry
 against fixtures whose generated output is committed under `tests/build/generated/`.
 Templates can be declared by hand in the `templates` callback or generated, and the copy
 catalog is wired through both: `t` and the `Intl` helpers in a body, locale names with no
-convention at all, and the catalog checks in the build. What has no code yet is the preview
-server and the scaffolder. Where this file names a module that has not landed, it is the contract
+convention at all, and the catalog checks in the build. A letter's header can declare what
+it attaches, as a file the build inlines or a field the caller passes, and a letter that
+renders html and no text gets a text part derived from it. There is a third test tier,
+`tests/integration/`, which posts at a real mock-resend over HTTP. What has no code yet is
+the preview server and the scaffolder. Where this file names a module that has not landed, it is the contract
 for building it rather than code you can read, so check that a file exists before assuming
 it.
 
@@ -82,6 +85,8 @@ pnpm typecheck               # tsc --noEmit
 pnpm test                    # vitest run
 pnpm test:watch              # vitest
 pnpm test:types              # vitest --typecheck, the primary suite
+pnpm test:integration        # against a real mock-resend, needs its container up
+pnpm fixtures:build          # rewrites tests/build/generated from tests/build/fixtures
 pnpm test:coverage           # vitest run --coverage, with the thresholds CI enforces
 pnpm build                   # tsdown, writes dist
 pnpm check:exports           # publint and attw against the built package
@@ -105,6 +110,7 @@ src/
   capabilities.ts          capability types, and send options conditional on them
   provider.ts              the Provider interface and the helpers that read its types
   copy.ts                  translate, the escaping rule and the Intl formatters
+  text.ts                  the text part derived from a rendered html body
   handlebars.ts            exported from "@rapture-sh/mailer/handlebars". the helper glue.
   retry.ts                 backoff over the transient kinds only
   guards.ts                the construction-time assertions, baseUrl included
@@ -116,12 +122,15 @@ src/
     index.ts               build(): letter files and catalogs in, one typed module out
     frontmatter.ts         the --- header, and what makes a file a letter
     fields.ts              the handlebars syntax tree to field types and copy keys
+    attachments.ts         the header's attachments: files read and encoded, fields typed
     emit.ts                the typed registry, and the bodies beside it
 
 tests/                     mirrors src/, one file per source file
   types/                   the type tier, *.test-d.ts, run with vitest --typecheck
+  integration/             the third tier: a real mock-resend over http
   build/fixtures/          real letter files and three catalogs the build runs against
   build/generated/         their output, committed, typechecked and rendered by tests
+  build/generate.mts       rewrites that output. pnpm fixtures:build
 
 examples/                  one application per thing shown, run against src/ with tsx
   basic-send/              one message, no templates
@@ -185,6 +194,14 @@ behaving like the same mailer.
   provider-specific `send` overload.
 - `template.ts` owns field inference. A caller's field types come from the registry, so
   nothing downstream re-declares them.
+- `text.ts` is the one place html becomes text. It runs on the rendered body in
+  `sendTemplate`, never at build time, so the text cannot drift from the html beside it.
+- An attachment a letter declares never passes through the call site, so `MessageOptions`
+  cannot gate it. `RequiredAttachments` in `mailer.ts` is where that capability is checked
+  instead, and it reads `attachments: true` off a generated registry's spec. A hand written
+  letter cannot be told apart from one without attachments, because `letterBuilder` would
+  need a cast to record it: that gap is deliberate and documented rather than closed with
+  an `as`.
 - `guards.ts` holds the construction-time assertions: the one that permits a non-default
   `baseUrl` only outside production, and the one that refuses a mail-capturing provider in
   production at all. A misconfigured deploy posting mail into a mock is silent and looks
@@ -248,7 +265,7 @@ behaving like the same mailer.
 
 ## Testing
 
-Two tiers, and the second one is the primary suite here. That is unusual and deliberate:
+Three tiers, and the second one is the primary suite here. That is unusual and deliberate:
 this package's product is its types, so a green runtime suite proves almost nothing on
 its own.
 
@@ -278,7 +295,18 @@ describe("mailer.send", () => {
 Write the comment next to it saying what should have failed, because a stray
 `@ts-expect-error` that stops applying is a silently dead test.
 
-Conventions, both tiers:
+**Integration tests** live in `tests/integration/`, run under `vitest.integration.mts`
+with `pnpm test:integration`, and post through the `resend` provider at a real
+[mock-resend](https://github.com/rapture-sh/mock-resend) container. They are the only tests
+that touch a socket, and they exist for the one thing the other tiers cannot do: prove the
+error mapping against the bodies and statuses a Resend compatible API actually answers
+with, by asking the server to fail on purpose through its admin API. They skip themselves
+when nothing is listening, so `pnpm test` stays the suite that needs nothing, and CI sets
+`MOCK_RESEND_REQUIRED=1` so a container that failed to start fails the job instead of
+quietly testing nothing. Every test takes an inbox of its own, because mock-resend keys
+captured mail and fault rules by api key.
+
+Conventions, every tier:
 
 - **Coverage has a floor**, set in `vitest.config.mts` just under what the suite reaches,
   and CI runs the coverage run rather than the plain one. Raise the floor when the suite

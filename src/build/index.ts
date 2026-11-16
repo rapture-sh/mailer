@@ -2,6 +2,7 @@ import { readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import Handlebars from "handlebars";
 import { type Catalog, placeholdersIn } from "../copy";
+import { type CompiledAttachment, compileAttachments } from "./attachments";
 import {
   type CompiledCatalog,
   type CompiledLetter,
@@ -11,6 +12,12 @@ import {
 import { type CopyUse, type Fields, inferBody, subjectPlaceholders } from "./fields";
 import { type LetterHeader, parseHeader, splitFile } from "./frontmatter";
 
+export {
+  type CompiledAttachment,
+  compileAttachments,
+  contentTypeFor,
+  MAX_INLINE_BYTES,
+} from "./attachments";
 export type { CompiledCatalog, CompiledLetter, CompiledPartial } from "./emit";
 export { type EmittedModules, emitModules } from "./emit";
 export {
@@ -21,7 +28,13 @@ export {
   inferBody,
   typeOf,
 } from "./fields";
-export { type HeaderSubject, type LetterHeader, parseHeader, splitFile } from "./frontmatter";
+export {
+  type HeaderAttachment,
+  type HeaderSubject,
+  type LetterHeader,
+  parseHeader,
+  splitFile,
+} from "./frontmatter";
 
 export type CopyOptions = {
   /** The locale a reader with none, or one missing a key, reads instead. */
@@ -244,6 +257,32 @@ function withWrittenTypes(fields: Fields, header: LetterHeader): Fields {
   return merged;
 }
 
+/**
+ * An attachment the caller passes is a field of the letter, typed as an `Attachment`, so
+ * the call site has to supply one. It is not rendered, which is why it is added after the
+ * body's own fields and refuses to share a name with one.
+ */
+function withAttachmentFields(fields: Fields, attachments: readonly CompiledAttachment[]): Fields {
+  const merged: Fields = { ...fields };
+
+  for (const attachment of attachments) {
+    if (attachment.kind !== "field") continue;
+
+    if (merged[attachment.field] !== undefined) {
+      throw new Error(
+        `attachments: '${attachment.field}' is already a field of this letter, so it cannot also be one the caller attaches`,
+      );
+    }
+
+    merged[attachment.field] = {
+      type: { kind: "written", type: "Attachment" },
+      optional: attachment.optional,
+    };
+  }
+
+  return merged;
+}
+
 function checkCopyUses(uses: readonly CopyUse[], copy: LoadedCopy | undefined): void {
   if (uses.length === 0) return;
 
@@ -280,6 +319,7 @@ function checkLetter(
   senders: readonly string[] | undefined,
   partials: readonly string[],
   known: readonly string[],
+  attached: readonly string[],
 ): void {
   if (header.from !== undefined && senders !== undefined && !senders.includes(header.from)) {
     throw new Error(
@@ -295,8 +335,15 @@ function checkLetter(
     if (!known.includes(partial)) throw new Error(`there is no partial named '${partial}'`);
   }
 
+  for (const field of attached) {
+    if (header.sample?.[field] !== undefined) {
+      throw new Error(`the sample has '${field}', which is an attachment rather than copy`);
+    }
+  }
+
+  // An attachment is not rendered, so a sample has nothing useful to say about one.
   const required = Object.entries(fields)
-    .filter(([, field]) => !field.optional)
+    .filter(([name, field]) => !field.optional && !attached.includes(name))
     .map(([field]) => field);
 
   if (required.length === 0) return;
@@ -325,6 +372,7 @@ type Pending = {
   header: LetterHeader;
   body: string;
   fields: Fields;
+  attachments: readonly CompiledAttachment[];
   used: readonly string[];
   copy: readonly CopyUse[];
   subjectValues: readonly string[];
@@ -372,7 +420,10 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
 
       const parsed = parseHeader(header);
       const inferred = inferBody(body);
-      const fields = withWrittenTypes(inferred.fields, parsed);
+      const attachments = await compileAttachments(name, parsed.attachments, (path) =>
+        resolve(dirname(file), path),
+      );
+      const fields = withAttachmentFields(withWrittenTypes(inferred.fields, parsed), attachments);
       const subject = parsed.subject;
       const subjectValues =
         "key" in subject
@@ -390,6 +441,7 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
         header: parsed,
         body,
         fields,
+        attachments,
         used: inferred.partials,
         copy:
           "key" in subject
@@ -409,7 +461,16 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
   for (const letter of pending) {
     try {
       checkCopyUses(letter.copy, copy);
-      checkLetter(letter.header, letter.fields, options.senders, letter.used, known);
+      checkLetter(
+        letter.header,
+        letter.fields,
+        options.senders,
+        letter.used,
+        known,
+        letter.attachments.flatMap((attachment) =>
+          attachment.kind === "field" ? [attachment.field] : [],
+        ),
+      );
 
       for (const use of letter.copy) asked.add(use.key);
 
@@ -418,6 +479,7 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
         header: letter.header,
         fields: letter.fields,
         subjectValues: letter.subjectValues,
+        attachments: letter.attachments,
         spec: String(Handlebars.precompile(letter.body)),
       });
     } catch (cause) {

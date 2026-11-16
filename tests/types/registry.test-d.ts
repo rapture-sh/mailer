@@ -65,7 +65,9 @@ describe("a merged registry", () => {
   it("should offer every letter from both halves", () => {
     expectTypeOf(mailer.sendTemplate)
       .parameter(0)
-      .toEqualTypeOf<"booking" | "feedback" | "magic-code" | "welcome" | "password-reset">();
+      .toEqualTypeOf<
+        "booking" | "feedback" | "magic-code" | "receipt" | "welcome" | "password-reset"
+      >();
   });
 });
 

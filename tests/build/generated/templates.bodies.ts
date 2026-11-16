@@ -43,6 +43,11 @@ for (const [name, partial] of Object.entries(partials)) {
   runtime.registerPartial(name, partial);
 }
 
+/** Every file a letter's header attached, base64 as the providers take it. */
+export const files = {
+  "receipt/logo.png": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+};
+
 export const bodies = {
   "booking": runtime.template({"0":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=container.hooks.helperMissing, alias3=container.escapeExpression, lookupProperty = container.lookupProperty || function(parent, propertyName) {
@@ -123,6 +128,27 @@ export const bodies = {
     };
 
   return ((stack1 = container.invokePartial(lookupProperty(partials,"layout"),depth0,{"name":"layout","hash":{"heading":(lookupProperty(helpers,"t")||(depth0 && lookupProperty(depth0,"t"))||container.hooks.helperMissing).call(depth0 != null ? depth0 : (container.nullContext || {}),"magic-code.heading",{"name":"t","hash":{},"data":data,"loc":{"start":{"line":1,"column":20},"end":{"line":1,"column":44}}})},"fn":container.program(0, data, 0),"inverse":container.noop,"data":data,"helpers":helpers,"partials":partials,"decorators":container.decorators})) != null ? stack1 : "");
+},"usePartial":true,"useData":true}),
+  "receipt": runtime.template({"0":function(container,depth0,helpers,partials,data) {
+    var helper, lookupProperty = container.lookupProperty || function(parent, propertyName) {
+        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {
+          return parent[propertyName];
+        }
+        return undefined
+    };
+
+  return "  <p>Receipt "
+    + container.escapeExpression(((helper = (helper = lookupProperty(helpers,"reference") || (depth0 != null ? lookupProperty(depth0,"reference") : depth0)) != null ? helper : container.hooks.helperMissing),(typeof helper === "function" ? helper.call(depth0 != null ? depth0 : (container.nullContext || {}),{"name":"reference","hash":{},"data":data,"loc":{"start":{"line":2,"column":13},"end":{"line":2,"column":28}}}) : helper)))
+    + " is attached.</p>\n  <p><img src=\"cid:logo\" alt=\"Acme\"></p>\n";
+},"compiler":[8,">= 4.3.0"],"main":function(container,depth0,helpers,partials,data) {
+    var stack1, lookupProperty = container.lookupProperty || function(parent, propertyName) {
+        if (Object.prototype.hasOwnProperty.call(parent, propertyName)) {
+          return parent[propertyName];
+        }
+        return undefined
+    };
+
+  return ((stack1 = container.invokePartial(lookupProperty(partials,"layout"),depth0,{"name":"layout","hash":{"heading":"Receipt"},"fn":container.program(0, data, 0),"inverse":container.noop,"data":data,"helpers":helpers,"partials":partials,"decorators":container.decorators})) != null ? stack1 : "");
 },"usePartial":true,"useData":true}),
   "welcome": runtime.template({"0":function(container,depth0,helpers,partials,data) {
     var stack1, lookupProperty = container.lookupProperty || function(parent, propertyName) {

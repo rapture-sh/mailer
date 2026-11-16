@@ -217,3 +217,99 @@ describe("the formatters", () => {
     expect(provider.sent[0]?.html).toContain("2 Adult und 1 Child");
   });
 });
+
+describe("a generated letter that attaches files", () => {
+  const invoice = {
+    filename: "invoice.pdf",
+    content: new TextEncoder().encode("REF-4182"),
+    contentType: "application/pdf",
+  };
+
+  const terms = { filename: "terms.txt", content: "VGVybXM=" };
+
+  it("should attach the file its header named, encoded and content typed", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice },
+    });
+
+    expect(provider.sent[0]?.attachments?.[0]).toEqual({
+      filename: "logo.png",
+      // The build read logo.png and inlined it, so nothing touches the filesystem here.
+      content:
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+      contentType: "image/png",
+      inline: { cid: "logo" },
+    });
+  });
+
+  it("should attach what the caller passed after the letter's own", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice },
+    });
+
+    expect(provider.sent[0]?.attachments?.map((attachment) => attachment.filename)).toEqual([
+      "logo.png",
+      "invoice.pdf",
+    ]);
+  });
+
+  it("should leave out an optional attachment that was not passed", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice },
+    });
+
+    expect(provider.sent[0]?.attachments).toHaveLength(2);
+  });
+
+  it("should attach an optional one that was", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice, terms },
+    });
+
+    expect(provider.sent[0]?.attachments?.map((attachment) => attachment.filename)).toEqual([
+      "logo.png",
+      "invoice.pdf",
+      "terms.txt",
+    ]);
+  });
+
+  it("should keep the attachments passed at the call site beside the letter's", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice },
+      attachments: [{ filename: "extra.txt", content: "RXh0cmE=" }],
+    });
+
+    expect(provider.sent[0]?.attachments?.map((attachment) => attachment.filename)).toEqual([
+      "logo.png",
+      "invoice.pdf",
+      "extra.txt",
+    ]);
+  });
+
+  it("should derive a text part from the html it rendered", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: { reference: "REF-4182", invoice },
+    });
+
+    // The letter declares no text body, and the layout is html with an inline image in it.
+    expect(provider.sent[0]?.text).toBe("Receipt\n\nReceipt REF-4182 is attached.");
+  });
+});

@@ -12,6 +12,7 @@ import {
   type RenderContext,
   type Rendered,
 } from "./template";
+import { textFromHtml } from "./text";
 
 export type Senders = Readonly<Record<string, string>>;
 
@@ -81,6 +82,41 @@ export type RequiredSenders<TRegistry, TSenders> = [MissingSenders<TRegistry, TS
   ? Record<never, never>
   : { senders: Record<MissingSenders<TRegistry, TSenders>, string> };
 
+/**
+ * Every letter that attaches something of its own.
+ *
+ * A generated letter whose header declares attachments has the property required rather
+ * than optional, which is the only way to tell it apart from a letter that merely could
+ * have them. See `TemplatesFor`.
+ */
+type AttachingLetters<TLetters> = {
+  [K in keyof TLetters]: TLetters[K] extends { attachments: (...args: never) => unknown }
+    ? K
+    : never;
+}[keyof TLetters];
+
+/**
+ * The letters this mailer can be asked for: all of them, less the ones that attach files
+ * where the provider cannot send them.
+ *
+ * A letter's attachments never reach the call site, so `MessageOptions` cannot gate them
+ * and the capability is checked here instead. The error lands on the name, at the send that
+ * could not have worked.
+ *
+ * It is deliberately not a requirement on the config, which would fail earlier and read
+ * better: a config level conditional over the provider's capabilities is undecidable for a
+ * caller who takes its provider as a type parameter, and TypeScript requires an object to
+ * satisfy both branches of a deferred conditional, so `mailerFor(provider)` would stop
+ * compiling for everyone with an attaching letter.
+ *
+ * It covers generated letters, whose registry states what they carry. A hand written letter
+ * declares `attachments` as an optional property, so it cannot be told apart from one that
+ * has none without a cast in `letterBuilder`.
+ */
+export type SendableNames<TRegistry, TCapabilities> = "attachments" extends TCapabilities
+  ? keyof LettersIn<TRegistry> & string
+  : Exclude<keyof LettersIn<TRegistry> & string, AttachingLetters<LettersIn<TRegistry>>>;
+
 /** A reader carries a locale only where there are catalogs to read it against. */
 export type Reader<TLocale extends string> = [TLocale] extends [never]
   ? Recipient
@@ -120,6 +156,13 @@ export type MailerConfig<
    */
   templates?: (build: LetterBuilder<keyof TSenders & string>) => TRegistry;
   retry?: Partial<Retry>;
+  /**
+   * Whether a letter that renders html and no text gets a text part derived from it.
+   * On by default: a message with no text alternative is likelier to be filtered, and a
+   * letter file has nowhere to write a second body. A letter that renders its own text
+   * keeps it, and `send` is left alone, since a caller passing html meant that message.
+   */
+  autoText?: boolean;
 } & RequiredSenders<TRegistry, TSenders>;
 
 /**
@@ -137,7 +180,7 @@ export type Mailer<
 } & (keyof LettersIn<TRegistry> extends never
   ? Record<never, never>
   : {
-      sendTemplate<TName extends keyof LettersIn<TRegistry> & string>(
+      sendTemplate<TName extends SendableNames<TRegistry, TCapabilities>>(
         name: TName,
         args: SendTemplateArgs<
           LettersIn<TRegistry>[TName],
@@ -157,6 +200,7 @@ type LooseLetter = {
   subject: string | ((fields: LooseFields, context: RenderContext) => string);
   body: (fields: LooseFields, context: RenderContext) => Rendered;
   replyTo?: (fields: LooseFields, context: RenderContext) => string;
+  attachments?: (fields: LooseFields, context: RenderContext) => readonly Attachment[];
 };
 
 type LooseRegistry =
@@ -183,6 +227,7 @@ type LooseConfig = {
   from?: string;
   templates?: (build: LetterBuilder<string>) => LooseRegistry;
   retry?: Partial<Retry>;
+  autoText?: boolean;
 };
 
 /** Everything the mailer puts on the message itself. The rest belongs to the provider. */
@@ -252,6 +297,7 @@ export function createMailer<
   const copy = wrapped ? registry.copy : undefined;
   const retry: Retry = { ...defaultRetry, ...loose.retry };
   const provider = loose.provider;
+  const autoText = loose.autoText ?? true;
 
   const addressFor = (key: string): string => {
     const sender = loose.senders[key];
@@ -268,6 +314,7 @@ export function createMailer<
     rendered: Rendered,
     replyTo: string | undefined,
     args: LooseArgs,
+    attachments: readonly Attachment[] = args.attachments ?? [],
   ): MailMessage => ({
     from,
     to,
@@ -275,7 +322,7 @@ export function createMailer<
     ...(rendered.html === undefined ? {} : { html: rendered.html }),
     ...(rendered.text === undefined ? {} : { text: rendered.text }),
     ...(replyTo === undefined ? {} : { replyTo }),
-    ...(args.attachments === undefined ? {} : { attachments: args.attachments }),
+    ...(attachments.length === 0 ? {} : { attachments }),
     ...(args.idempotencyKey === undefined ? {} : { idempotencyKey: args.idempotencyKey }),
     ...(args.sendAt === undefined ? {} : { sendAt: args.sendAt }),
     ...(args.headers === undefined ? {} : { headers: args.headers }),
@@ -283,6 +330,17 @@ export function createMailer<
 
   const post = (message: MailMessage, args: LooseArgs): Promise<MailResult> =>
     withRetry(retry, () => provider.send(message, providerOptions(args)));
+
+  /** Markup that carried no words gives no text part rather than an empty one. */
+  const withText = (rendered: Rendered): Rendered => {
+    if (autoText === false || rendered.text !== undefined || rendered.html === undefined) {
+      return rendered;
+    }
+
+    const text = textFromHtml(rendered.html);
+
+    return text === "" ? rendered : { ...rendered, text };
+  };
 
   const mailer = {
     provider: provider.name,
@@ -344,9 +402,12 @@ export function createMailer<
         addressFor(letter.from ?? fallback),
         reader,
         subject,
-        letter.body(fields, context),
+        withText(letter.body(fields, context)),
         letter.replyTo?.(fields, context),
         args,
+        // The letter's own first, then the caller's, so a receipt keeps its logo above
+        // whatever was passed in beside it.
+        [...(letter.attachments?.(fields, context) ?? []), ...(args.attachments ?? [])],
       );
 
       return post(message, args);

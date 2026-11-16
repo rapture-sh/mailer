@@ -2,12 +2,12 @@
 //
 // 2 letters, 1 partial. Change a letter file and run the build again.
 
-import { defineTemplates } from "@rapture-sh/mailer";
-import { bodies } from "./templates.bodies";
+import { type Attachment, defineTemplates } from "@rapture-sh/mailer";
+import { bodies, files } from "./templates.bodies";
 
 export type Letters = {
   "magic-code": { addressed: "caller"; from: "auth"; fields: { code: string } };
-  "receipt": { addressed: "caller"; from: "notifications"; fields: { activityName: string; currency: string; participants: number; reference: string; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
+  "receipt": { addressed: "caller"; from: "notifications"; attachments: true; fields: { activityName: string; currency: string; invoice: Attachment; participants: number; reference: string; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
 };
 
 export const templates = defineTemplates<Letters>({
@@ -26,6 +26,7 @@ export const templates = defineTemplates<Letters>({
       from: "notifications",
       subject: (fields) => `Receipt ${fields.reference}`,
       html: bodies["receipt"],
+      attachments: (fields) => [{ filename: "logo.png", content: files["receipt/logo.png"], contentType: "image/png", inline: { cid: "logo" } }, fields.invoice],
       sample: {
         reference: "REF-4182",
         activityName: "Kayak tour, Lake Thun",

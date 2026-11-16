@@ -11,7 +11,7 @@ const bodies = {
   plain: (context: Record<string, unknown>) => `<p>${String(context.note)}</p>`,
 };
 
-function setup() {
+function setup(autoText?: boolean) {
   const provider = memory();
 
   const templates = defineTemplates<{
@@ -40,6 +40,7 @@ function setup() {
     provider,
     senders: { notifications: "Acme <n@example.com>" },
     templates,
+    ...(autoText === undefined ? {} : { autoText }),
   });
 
   return { provider, mailer, templates };
@@ -75,8 +76,16 @@ describe("defineTemplates", () => {
     expect(provider.sent[0]).toMatchObject({ html: "<p>hello</p>", text: "hello" });
   });
 
-  it("should leave the text off a letter generated without one", async () => {
+  it("should derive a text part for a letter generated without one", async () => {
     const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("inbound", { fields: { note: "hello", from: "h@e.com" } });
+
+    expect(provider.sent[0]).toMatchObject({ html: "<p>hello</p>", text: "hello" });
+  });
+
+  it("should leave the text off a letter generated without one when autoText is off", async () => {
+    const { provider, mailer } = setup(false);
 
     await mailer.sendTemplate("inbound", { fields: { note: "hello", from: "h@e.com" } });
 

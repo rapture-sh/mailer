@@ -18,6 +18,24 @@ export function asRecord(value: unknown): Record<string, unknown> | undefined {
  */
 export type HeaderSubject = { text: string } | { key: string };
 
+/**
+ * One `attachments:` entry.
+ *
+ * A `path` is a file beside the letter, which the build reads and inlines. A `field` is
+ * left to the caller and becomes a field of the letter typed as an `Attachment`, so a
+ * receipt that always carries an invoice says so once and the call site has to supply one.
+ */
+export type HeaderAttachment =
+  | {
+      kind: "file";
+      path: string;
+      filename: string | undefined;
+      contentType: string | undefined;
+      /** Set to reference the file from the html as `cid:<cid>` instead of attaching it. */
+      cid: string | undefined;
+    }
+  | { kind: "field"; field: string; optional: boolean };
+
 export type LetterHeader = {
   from: string | undefined;
   /** Present for a letter that comes to us, which is then addressed without a caller. */
@@ -27,12 +45,15 @@ export type LetterHeader = {
   replyTo: string | undefined;
   /** Field name to the TypeScript type written for it, which always beats inference. */
   fields: Record<string, string>;
+  attachments: readonly HeaderAttachment[];
   sample: Record<string, unknown> | undefined;
 };
 
 const FENCE = "---";
 
-const KEYS = new Set(["from", "inbox", "subject", "reply-to", "fields", "sample"]);
+const KEYS = new Set(["from", "inbox", "subject", "reply-to", "fields", "attachments", "sample"]);
+
+const ATTACHMENT_KEYS = new Set(["path", "field", "filename", "content-type", "cid", "optional"]);
 
 export type SplitFile = {
   /** The header's YAML, or nothing for a file that has none, which makes it a partial. */
@@ -84,6 +105,62 @@ function asTypes(value: unknown): Record<string, string> {
   return types;
 }
 
+function optionalString(record: Record<string, unknown>, key: string): string | undefined {
+  return record[key] === undefined ? undefined : asString(record[key], key);
+}
+
+function asAttachment(value: unknown, at: number): HeaderAttachment {
+  const where = `attachment ${at + 1}`;
+  const record = asRecord(value);
+
+  if (record === undefined) {
+    throw new Error(`${where} has to be a map with a path or a field in it`);
+  }
+
+  for (const key of Object.keys(record)) {
+    if (!ATTACHMENT_KEYS.has(key)) {
+      throw new Error(
+        `'${key}' is not an attachment key. Expected one of: ${[...ATTACHMENT_KEYS].join(", ")}`,
+      );
+    }
+  }
+
+  const path = optionalString(record, "path");
+  const field = optionalString(record, "field");
+
+  if (path !== undefined && field !== undefined) {
+    throw new Error(`${where} has both a path and a field, which cannot both be the source`);
+  }
+
+  if (field !== undefined) {
+    if (record.cid !== undefined) {
+      throw new Error(
+        `${where} is a field, so the caller sets its cid on the attachment it passes`,
+      );
+    }
+
+    return { kind: "field", field, optional: record.optional === true };
+  }
+
+  if (path === undefined) {
+    throw new Error(`${where} needs a path to a file, or a field the caller passes`);
+  }
+
+  return {
+    kind: "file",
+    path,
+    filename: optionalString(record, "filename"),
+    contentType: optionalString(record, "content-type"),
+    cid: optionalString(record, "cid"),
+  };
+}
+
+function asAttachments(value: unknown): readonly HeaderAttachment[] {
+  if (!Array.isArray(value)) throw new Error("attachments has to be a list");
+
+  return value.map((entry: unknown, at) => asAttachment(entry, at));
+}
+
 function asSubject(value: unknown): HeaderSubject {
   if (typeof value === "string") return { text: value };
 
@@ -122,6 +199,7 @@ export function parseHeader(yaml: string): LetterHeader {
     replyTo:
       record["reply-to"] === undefined ? undefined : asString(record["reply-to"], "reply-to"),
     fields: record.fields === undefined ? {} : asTypes(record.fields),
+    attachments: record.attachments === undefined ? [] : asAttachments(record.attachments),
     sample,
   };
 }

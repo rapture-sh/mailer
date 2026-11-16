@@ -1,5 +1,5 @@
 import type { CopyConfig, CopyValues, Formatters } from "./copy";
-import type { Recipient } from "./message";
+import type { Attachment, Recipient } from "./message";
 
 export type Rendered = {
   html?: string;
@@ -24,6 +24,18 @@ export type RenderContext = {
 export type NoFields = Record<never, never>;
 
 /**
+ * What a letter attaches, given its own fields.
+ *
+ * A letter's attachments are a function of its fields rather than a list, because the
+ * interesting ones are the caller's: an invoice is a field, and a logo is a constant the
+ * build inlined.
+ */
+export type Attachments<TFields> = (
+  fields: TFields,
+  context: RenderContext,
+) => readonly Attachment[];
+
+/**
  * What a letter is declared with. `body` is the one inference site for the fields, so a
  * letter with fields states them as a type argument and one without needs nothing.
  */
@@ -33,6 +45,7 @@ export type LetterDefinition<TFields, TSender extends string> = {
   subject: string | ((fields: TFields, context: RenderContext) => string);
   body: (fields: TFields, context: RenderContext) => Rendered;
   replyTo?: (fields: TFields, context: RenderContext) => string;
+  attachments?: Attachments<TFields>;
 };
 
 export type InternalLetterDefinition<TFields, TSender extends string> = LetterDefinition<
@@ -106,12 +119,19 @@ export type GeneratedLetter<TFields> = {
   readonly subject: string | ((fields: TFields, context: RenderContext) => string);
   /** A precompiled template, which takes the fields and the context as one object. */
   readonly html: (context: Record<string, unknown>) => string;
+  /** What the letter's header declared: inlined files, and the fields that carry one. */
+  readonly attachments?: (fields: TFields) => readonly Attachment[];
   readonly text?: (context: Record<string, unknown>) => string;
   /** The field to read a reply address out of, checked against the fields themselves. */
   readonly replyToField?: keyof TFields & string;
-  /** What the preview and the checks render with. Compiled against the fields, so it
-   * cannot drift from them. */
-  readonly sample?: TFields;
+  /**
+   * What the preview and the checks render with.
+   *
+   * Partial because an attachment is a field a caller passes and there is no sample value
+   * for a file. The build is what insists on a complete sample, and it knows which fields
+   * are rendered, so it checks more than this type can.
+   */
+  readonly sample?: Partial<TFields>;
 };
 
 /**
@@ -129,6 +149,8 @@ export type GeneratedSpec = Record<
      * it fails to compile rather than at send time. Absent where the letter named none.
      */
     from?: string;
+    /** Present where the letter's header declared attachments. */
+    attachments?: true;
   }
 >;
 
@@ -139,10 +161,23 @@ export type GeneratedLetters<TSpec extends GeneratedSpec> = {
   [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]>;
 };
 
+/**
+ * The attachments half of a generated letter's type.
+ *
+ * Required rather than optional where the header declared one, which is how the mailer
+ * tells an attachment carrying letter from an ordinary one and refuses a provider that
+ * cannot send it. An intersection, because `Letter` itself must stay the shape a hand
+ * written letter has.
+ */
+type AttachmentsIn<TEntry, TFields> = TEntry extends { attachments: true }
+  ? { attachments: Attachments<TFields> }
+  : Record<never, never>;
+
 export type TemplatesFor<TSpec extends GeneratedSpec> = {
-  [K in keyof TSpec]: TSpec[K]["addressed"] extends "inbox"
+  [K in keyof TSpec]: (TSpec[K]["addressed"] extends "inbox"
     ? InternalLetter<TSpec[K]["fields"], FromIn<TSpec[K]>>
-    : Letter<TSpec[K]["fields"], FromIn<TSpec[K]>>;
+    : Letter<TSpec[K]["fields"], FromIn<TSpec[K]>>) &
+    AttachmentsIn<TSpec[K], TSpec[K]["fields"]>;
 };
 
 /**
@@ -187,6 +222,9 @@ export function defineTemplates<TSpec extends GeneratedSpec, TCopy extends CopyC
         : {
             replyTo: (fields: Record<string, unknown>) => String(fields[letter.replyToField]),
           }),
+      ...(letter.attachments === undefined
+        ? {}
+        : { attachments: (fields: Record<string, unknown>) => letter.attachments?.(fields) ?? [] }),
     };
 
     built[name] =

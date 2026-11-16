@@ -33,7 +33,7 @@ describe("build", () => {
     const { result } = await run();
 
     expect([result.letters, result.partials]).toEqual([
-      ["booking", "feedback", "magic-code", "welcome"],
+      ["booking", "feedback", "magic-code", "receipt", "welcome"],
       ["layout"],
     ]);
   });
@@ -81,8 +81,12 @@ describe("the module it writes", () => {
   });
 
   it("should import defineTemplates and the bodies beside it", () => {
-    expect(module).toContain('import { defineTemplates } from "@rapture-sh/mailer";');
-    expect(module).toContain('import { bodies, copy } from "./templates.bodies";');
+    // Attachment comes with it here because a fixture letter declares one the caller
+    // passes, which is a field typed as an Attachment.
+    expect(module).toContain(
+      'import { type Attachment, defineTemplates } from "@rapture-sh/mailer";',
+    );
+    expect(module).toContain('import { bodies, files, copy } from "./templates.bodies";');
   });
 
   it("should read a field off a placeholder in the body", () => {
@@ -205,7 +209,9 @@ describe("what the build refuses", () => {
 
     await build({ letters: fixtures, out, copy, packageImport: "@acme/mail" });
 
-    expect(await readFile(out, "utf8")).toContain('import { defineTemplates } from "@acme/mail";');
+    expect(await readFile(out, "utf8")).toContain(
+      'import { type Attachment, defineTemplates } from "@acme/mail";',
+    );
   });
 
   it("should refuse a directory with no letters in it", async () => {
@@ -252,5 +258,128 @@ describe("the module as a consumer gets it", () => {
     const { result } = await run();
 
     expect(result.locales).toEqual(["de-CH", "en-GB", "pirate-Speak"]);
+  });
+});
+
+describe("a letter's attachments", () => {
+  async function letters(header: string, body = "<p>Hi</p>\n") {
+    const directory = await mkdtemp(join(tmpdir(), "mailer-attach-"));
+
+    await writeFile(join(directory, "logo.png"), "Acme", "utf8");
+    await writeFile(join(directory, "note.hbs"), `---\n${header}\n---\n${body}`, "utf8");
+
+    return { directory, out: join(directory, "templates.ts") };
+  }
+
+  async function run(header: string, body?: string) {
+    const { directory, out } = await letters(header, body);
+    const result = await build({ letters: directory, out });
+
+    return {
+      module: await readFile(result.out, "utf8"),
+      bodies: await readFile(result.bodiesOut, "utf8"),
+    };
+  }
+
+  it("should inline a file beside the letter, base64 in the bodies module", async () => {
+    const { bodies } = await run("subject: Hi\nattachments:\n  - path: logo.png");
+
+    expect(bodies).toContain('"note/logo.png": "QWNtZQ=="');
+  });
+
+  it("should attach it with the content type its extension implies", async () => {
+    const { module } = await run("subject: Hi\nattachments:\n  - path: logo.png");
+
+    expect(module).toContain(
+      'attachments: () => [{ filename: "logo.png", content: files["note/logo.png"], contentType: "image/png" }]',
+    );
+  });
+
+  it("should reference a file by content id where the header gave one", async () => {
+    const { module } = await run("subject: Hi\nattachments:\n  - path: logo.png\n    cid: logo");
+
+    expect(module).toContain('inline: { cid: "logo" }');
+  });
+
+  it("should make an attachment the caller passes a field of the letter", async () => {
+    const { module } = await run("subject: Hi\nattachments:\n  - field: invoice");
+
+    expect(module).toContain(
+      '"note": { addressed: "caller"; attachments: true; fields: { invoice: Attachment } };',
+    );
+  });
+
+  it("should make an optional one an optional field", async () => {
+    const { module } = await run("subject: Hi\nattachments:\n  - field: terms\n    optional: true");
+
+    expect(module).toContain("fields: { terms?: Attachment }");
+    expect(module).toContain("...(fields.terms === undefined ? [] : [fields.terms])");
+  });
+
+  it("should ask for no sample value for an attachment, because there is none", async () => {
+    const { module } = await run("subject: Hi\nattachments:\n  - field: invoice");
+
+    expect(module).not.toContain("sample:");
+  });
+
+  it("should refuse a sample that carries an attachment", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - field: invoice\nsample:\n  invoice: a file",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'invoice', which is an attachment/,
+    );
+  });
+
+  it("should refuse an attachment that is both a path and a field", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - path: logo.png\n    field: invoice",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(/both a path and a field/);
+  });
+
+  it("should refuse an attachment that is neither", async () => {
+    const { directory, out } = await letters("subject: Hi\nattachments:\n  - filename: x.pdf");
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(/needs a path to a file/);
+  });
+
+  it("should refuse a content id on an attachment the caller passes", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - field: invoice\n    cid: invoice",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(/the caller sets its cid/);
+  });
+
+  it("should refuse an attachment key it does not know, which is usually a typo", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - path: logo.png\n    content_type: image/png",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'content_type' is not an attachment key/,
+    );
+  });
+
+  it("should refuse a field that the body already renders", async () => {
+    const { directory, out } = await letters(
+      "subject: Hi\nattachments:\n  - field: invoice\nsample:\n  invoice: x",
+      "<p>{{ invoice }}</p>\n",
+    );
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /'invoice' is already a field of this letter/,
+    );
+  });
+
+  it("should refuse attachments written as anything but a list", async () => {
+    const { directory, out } = await letters("subject: Hi\nattachments: logo.png");
+
+    await expect(build({ letters: directory, out })).rejects.toThrow(
+      /attachments has to be a list/,
+    );
   });
 });

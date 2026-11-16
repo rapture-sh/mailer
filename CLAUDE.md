@@ -27,7 +27,12 @@ Everything in `AGENTS.md` applies. The points worth repeating:
   `vitest --typecheck`, most of them negative. A feature that adds type surface is not
   done until a type test would fail without it.
 - **Tests never send real mail.** The `memory` provider or a stubbed fetch, no API keys,
-  no real recipient addresses.
+  no real recipient addresses. `tests/integration/` is the exception that proves the rule:
+  it posts over HTTP, but only ever at a mock-resend container, and it skips itself when
+  there is none.
+- **A letter may attach files**, as a `path` the build inlines or a `field` the caller
+  passes. The capability check for those lives in `RequiredAttachments`, not at the call
+  site, because they never pass through it.
 - **Every test name starts with `should`** and reads as a sentence. `describe` names the
   thing under test and carries no `should`.
 - **Before saying you are done**: `pnpm check`. That is lint, typecheck, both test tiers,

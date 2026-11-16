@@ -25,8 +25,10 @@ export default defineConfig({
     },
   },
   test: {
-    // The examples have a config of their own, so this suite is the package's own.
+    // The examples and the integration tier have configs of their own, so this suite is
+    // the package's own: everything that needs nothing running.
     include: ["tests/**/*.test.ts"],
+    exclude: ["**/node_modules/**", "**/dist/**", "tests/integration/**"],
     typecheck: {
       include: ["tests/types/**/*.test-d.ts"],
       tsconfig: "./tsconfig.json",
@@ -39,10 +41,10 @@ export default defineConfig({
       // A floor rather than a target: set just under what the suite reaches, so a change
       // that drops real coverage fails while a line of error text does not.
       thresholds: {
-        statements: 95,
-        branches: 86,
-        functions: 97,
-        lines: 96,
+        statements: 96,
+        branches: 90,
+        functions: 98,
+        lines: 97,
       },
     },
   },

@@ -3,6 +3,14 @@ from: notifications
 subject: Receipt {reference}
 fields:
   participants: number
+attachments:
+  # Read and inlined by the build, so nothing touches the filesystem at send time, and
+  # shown in the body by its content id rather than listed as a download.
+  - path: assets/logo.png
+    cid: logo
+  # Left to the caller, which makes it a field of this letter typed as an Attachment: a
+  # receipt always carries its invoice, so the call site has to pass one.
+  - field: invoice
 sample:
   reference: REF-4182
   activityName: Kayak tour, Lake Thun
@@ -20,6 +28,9 @@ sample:
   the header, because nothing here says it is a number rather than a string.
 --}}
 {{#> layout heading="Thanks for your booking" }}
+  <tr>
+    <td style="padding: 20px 32px 0"><img src="cid:logo" width="24" height="24" alt="Acme"></td>
+  </tr>
   <tr>
     <td style="padding: 20px 32px 0; font-size: 15px">
       {{ activityName }} for {{ participants }} people, {{ dateTime startsAt zone=timezone }}.

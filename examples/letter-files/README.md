@@ -13,6 +13,7 @@ pnpm example:files
 
 ```
 emails/            one file per letter, plus the layout they share
+emails/assets/     what a letter attaches. read and inlined by the build.
 build-emails.ts    the build script. in your own repo: scripts/build-emails.mjs
 generated/         what the build writes. committed, typechecked, never edited.
 send.ts            sends both letters through the memory provider
@@ -26,6 +27,12 @@ What it shows:
   `timezone` a string, `{{ list tickets }}` makes it a list of strings, and
   `{{#if voucherCode}}` makes that one optional. Only `participants: number` is declared,
   because nothing in the markup says it is a number rather than a string.
+- **A letter declares what it attaches.** `emails/receipt.hbs` attaches
+  `assets/logo.png`, which the build reads and inlines as base64 and the body shows with
+  `cid:logo`, and declares an `invoice` the caller passes, which is why `send.ts` has to
+  hand one over and would not compile without it.
+- **Neither letter writes a text body**, and both go out with one: it is derived from the
+  rendered html, which is what `send.ts` prints.
 - **A file with a header is a letter, a file without one is a partial.** That is how
   `layout.hbs` is recognised without being configured anywhere.
 - **The build writes two files.** `templates.ts` is the typed registry your compiler

@@ -41,6 +41,7 @@ export {
 } from "./result";
 export { defaultRetry, delayFor, type Retry, withRetry } from "./retry";
 export type {
+  Attachments,
   FieldsOf,
   InternalLetter,
   InternalLetterDefinition,
@@ -61,3 +62,4 @@ export {
   type GeneratedSpec,
   type TemplatesFor,
 } from "./template";
+export { textFromHtml } from "./text";

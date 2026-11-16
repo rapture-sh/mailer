@@ -1,3 +1,4 @@
+import type { CompiledAttachment } from "./attachments";
 import { type Field, type Fields, subjectPlaceholders, typeOf } from "./fields";
 import type { LetterHeader } from "./frontmatter";
 
@@ -7,6 +8,8 @@ export type CompiledLetter = {
   fields: Fields;
   /** The placeholders a copy key subject needs, which are fields of the letter. */
   subjectValues: readonly string[];
+  /** What its header attached: files already encoded, and the fields that carry one. */
+  attachments: readonly CompiledAttachment[];
   /** The precompiled handlebars body, as JavaScript source. */
   spec: string;
 };
@@ -85,6 +88,38 @@ function subjectExpression(letter: CompiledLetter): string {
   return `(fields) => \`${filled}\``;
 }
 
+/**
+ * The letter's attachments, as a function of its fields.
+ *
+ * A file's bytes live in the bodies module beside the compiled templates rather than here,
+ * because a base64 blob is data and this file is meant to stay readable. Its `content` is
+ * a base64 string, which is what a provider takes without encoding it again.
+ */
+function attachmentsExpression(attachments: readonly CompiledAttachment[]): string {
+  const parts = attachments.map((attachment) => {
+    if (attachment.kind === "field") {
+      return attachment.optional
+        ? `...(fields.${attachment.field} === undefined ? [] : [fields.${attachment.field}])`
+        : `fields.${attachment.field}`;
+    }
+
+    const entries = [
+      `filename: ${quote(attachment.filename)}`,
+      `content: files[${quote(attachment.key)}]`,
+      ...(attachment.contentType === undefined
+        ? []
+        : [`contentType: ${quote(attachment.contentType)}`]),
+      ...(attachment.cid === undefined ? [] : [`inline: { cid: ${quote(attachment.cid)} }`]),
+    ];
+
+    return `{ ${entries.join(", ")} }`;
+  });
+
+  const takesFields = attachments.some((attachment) => attachment.kind === "field");
+
+  return `(${takesFields ? "fields" : ""}) => [${parts.join(", ")}]`;
+}
+
 function fieldsType(fields: Fields): string {
   const names = Object.keys(fields).sort();
 
@@ -140,6 +175,10 @@ function letterEntry(letter: CompiledLetter): string {
 
   lines.push(`${inner}html: bodies[${quote(letter.name)}],`);
 
+  if (letter.attachments.length > 0) {
+    lines.push(`${inner}attachments: ${attachmentsExpression(letter.attachments)},`);
+  }
+
   if (header.sample !== undefined) {
     lines.push(`${inner}sample: ${sampleLiteral(header.sample, inner, letter.fields)},`);
   }
@@ -164,14 +203,24 @@ export function emitModules(options: EmitOptions): EmittedModules {
   const letters = [...options.letters].sort((one, other) => one.name.localeCompare(other.name));
   const partials = [...options.partials].sort((one, other) => one.name.localeCompare(other.name));
   const copy = options.copy;
+  const files = letters.flatMap((letter) =>
+    letter.attachments.filter((attachment) => attachment.kind === "file"),
+  );
+  const attachesFields = letters.some((letter) =>
+    letter.attachments.some((attachment) => attachment.kind === "field"),
+  );
+  const imported = ["bodies", ...(files.length === 0 ? [] : ["files"])];
 
   const spec = letters.map((letter) => {
     const addressed = letter.header.inbox === undefined ? '"caller"' : '"inbox"';
     // The sender is written into the type as well as the value, so a mailer whose senders
     // do not include it fails to compile.
     const from = letter.header.from === undefined ? "" : `from: ${quote(letter.header.from)}; `;
+    // Written into the type as well, so a provider that cannot send an attachment fails to
+    // compile where the mailer is built rather than dropping the file at send time.
+    const attached = letter.attachments.length === 0 ? "" : "attachments: true; ";
 
-    return `${INDENT}${quote(letter.name)}: { addressed: ${addressed}; ${from}fields: ${fieldsType(
+    return `${INDENT}${quote(letter.name)}: { addressed: ${addressed}; ${from}${attached}fields: ${fieldsType(
       letter.fields,
     )} };`;
   });
@@ -183,10 +232,12 @@ export function emitModules(options: EmitOptions): EmittedModules {
       partials.length === 1 ? "" : "s"
     }${copy === undefined ? "" : `, ${copy.catalogs.length} locales`}. Change a letter file and run the build again.`,
     "",
-    `import { defineTemplates } from ${quote(options.packageImport)};`,
-    copy === undefined
-      ? `import { bodies } from ${quote(options.bodiesImport)};`
-      : `import { bodies, copy } from ${quote(options.bodiesImport)};`,
+    attachesFields
+      ? `import { type Attachment, defineTemplates } from ${quote(options.packageImport)};`
+      : `import { defineTemplates } from ${quote(options.packageImport)};`,
+    `import { ${[...imported, ...(copy === undefined ? [] : ["copy"])].join(", ")} } from ${quote(
+      options.bodiesImport,
+    )};`,
     "",
     "export type Letters = {",
     ...spec,
@@ -258,6 +309,16 @@ export function emitModules(options: EmitOptions): EmittedModules {
       "for (const [name, partial] of Object.entries(partials)) {",
       `${INDENT}runtime.registerPartial(name, partial);`,
       "}",
+      "",
+    );
+  }
+
+  if (files.length > 0) {
+    bodies.push(
+      "/** Every file a letter's header attached, base64 as the providers take it. */",
+      "export const files = {",
+      ...files.map((file) => `${INDENT}${quote(file.key)}: ${quote(file.base64)},`),
+      "};",
       "",
     );
   }

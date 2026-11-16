@@ -83,6 +83,23 @@ script does it twice:
 It clears its fault rules at both ends, because a rule outlives the process and would
 otherwise rate limit whatever sent next.
 
+## The package's own integration tests
+
+The same idea, as a suite rather than a script:
+
+```bash
+docker run --rm -p 9100:9100 raptureoss/mock-resend
+```
+
+```bash
+pnpm test:integration
+```
+
+It sends every kind of message this package can produce at the container and reads each one
+back: letters in several locales, attachments with their decoded sizes, idempotency,
+scheduling, and every error mock-resend will inject against the kind it has to become. It
+skips itself when nothing is listening, so `pnpm test` never needs a container.
+
 ## Notes
 
 - **The key is an inbox, not a credential.** mock-resend takes any key beginning `re_` and

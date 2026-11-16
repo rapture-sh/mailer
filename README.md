@@ -69,6 +69,7 @@ Contents
 - [Results and errors](#results-and-errors)
 - [Retries](#retries)
 - [Attachments](#attachments)
+- [A plain text part, for free](#a-plain-text-part-for-free)
 - [Examples](#examples)
 - [Compatibility](#compatibility)
 - [Not in scope](#not-in-scope)
@@ -187,9 +188,10 @@ sample:
 ```
 
 The header says which mailbox it comes from, what the subject line is, and gives one
-example of its fields for previews. Below the fence it is ordinary markup, wrapped in
-`layout.hbs`, which holds the table scaffolding and inline styles every email needs and
-which you write once.
+example of its fields for previews. It can also declare what the letter
+[attaches](#attachments) and the field types a placeholder cannot imply. Below the fence it
+is ordinary markup, wrapped in `layout.hbs`, which holds the table scaffolding and inline
+styles every email needs and which you write once.
 
 **2. Run the build.** It is a function, so it lives in a script of yours rather than being
 a command this package owns:
@@ -546,6 +548,69 @@ await mailer.send({
 `content` takes bytes or a base64 string. A provider that does not declare the attachments
 capability makes the option a compile error, and because that capability carries a byte
 limit, an oversized message comes back as `PayloadTooLarge` before anything is posted.
+
+**A letter can declare its own**, which is usually what you want: a logo is the same every
+time, and an invoice is always there even though its bytes are not.
+
+```hbs
+---
+from: notifications
+subject: Receipt {reference}
+attachments:
+  - path: assets/logo.png
+    cid: logo
+  - field: invoice
+  - field: terms
+    optional: true
+sample:
+  reference: REF-4182
+---
+<p><img src="cid:logo" alt="Acme"></p>
+<p>Receipt {{ reference }} is attached.</p>
+```
+
+A **`path`** is a file beside the letter. The build reads it and inlines it, so nothing
+touches the filesystem when the mail goes out, which matters in an edge runtime or a Convex
+isolate where there is no `fs` to read a logo out of. Give it a `cid` and it is shown in
+the body as `cid:logo` instead of being listed as a download. `filename` and `content-type`
+are inferred from the file and can be overridden.
+
+A **`field`** is left to you, and becomes a field of the letter typed as an `Attachment`:
+
+```ts
+await mailer.sendTemplate("receipt", {
+  to: reader,
+  fields: {
+    reference: "REF-4182",
+    // Required. Leave it out and this does not compile.
+    invoice: { filename: "invoice.pdf", content: pdfBytes, contentType: "application/pdf" },
+  },
+});
+```
+
+The letter's own attachments go out first, then whatever you passed at the call site. A
+provider that cannot send attachments at all makes the mailer itself fail to compile, since
+a letter's attachments never pass through the call site where the capability is usually
+checked.
+
+
+A plain text part, for free
+---------------------------
+
+A letter that renders html and no text gets a text alternative derived from the html it
+just rendered: the words, the list items, and the links as `text (url)`. A message with no
+text part is likelier to be filtered, and a letter file has nowhere to write a second body.
+
+```ts
+// Both bodies, and only one was written.
+provider.sent[0].html; // "<h1>Receipt</h1><p>Paid <b>CHF 125.00</b>.</p>"
+provider.sent[0].text; // "Receipt\n\nPaid CHF 125.00."
+```
+
+It runs on the rendered html, so the text carries the same field values the html does and
+cannot drift from it. A letter that renders its own `text` keeps it, `send` is left alone
+because a caller passing html meant that message, and `autoText: false` on `createMailer`
+turns it off.
 
 
 Examples

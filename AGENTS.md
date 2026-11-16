@@ -87,6 +87,7 @@ pnpm test:watch              # vitest
 pnpm test:types              # vitest --typecheck, the primary suite
 pnpm test:integration        # against a real mock-resend, needs its container up
 pnpm fixtures:build          # rewrites tests/build/generated from tests/build/fixtures
+pnpm fixtures:check          # the same, reporting whether the committed output is current
 pnpm test:coverage           # vitest run --coverage, with the thresholds CI enforces
 pnpm build                   # tsdown, writes dist
 pnpm check:exports           # publint and attw against the built package

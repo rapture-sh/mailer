@@ -92,8 +92,9 @@ function subjectExpression(letter: CompiledLetter): string {
  * The letter's attachments, as a function of its fields.
  *
  * A file's bytes live in the bodies module beside the compiled templates rather than here,
- * because a base64 blob is data and this file is meant to stay readable. Its `content` is
- * a base64 string, which is what a provider takes without encoding it again.
+ * because a base64 blob is data and this file is meant to stay readable. The map holds the
+ * base64 itself and the attachment wraps it as `{ base64 }`, which is the shape that says
+ * the bytes are already encoded.
  */
 function attachmentsExpression(attachments: readonly CompiledAttachment[]): string {
   const parts = attachments.map((attachment) => {
@@ -105,7 +106,7 @@ function attachmentsExpression(attachments: readonly CompiledAttachment[]): stri
 
     const entries = [
       `filename: ${quote(attachment.filename)}`,
-      `content: files[${quote(attachment.key)}]`,
+      `content: { base64: files[${quote(attachment.key)}] }`,
       ...(attachment.contentType === undefined
         ? []
         : [`contentType: ${quote(attachment.contentType)}`]),

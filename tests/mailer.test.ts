@@ -132,7 +132,7 @@ describe("mailer.send", () => {
       to: ada,
       subject: "Receipt",
       text: "Attached.",
-      attachments: [{ filename: "receipt.pdf", content: "JVBERi0=" }],
+      attachments: [{ filename: "receipt.pdf", content: { base64: "JVBERi0=" } }],
     });
 
     expect(provider.sent[0]?.attachments).toHaveLength(1);
@@ -244,7 +244,7 @@ describe("mailer.sendTemplate", () => {
 });
 
 describe("a letter that attaches something of its own", () => {
-  const logo = { filename: "logo.png", content: "QWNtZQ==", inline: { cid: "logo" } };
+  const logo = { filename: "logo.png", content: { base64: "QWNtZQ==" }, inline: { cid: "logo" } };
 
   function attaching(autoText?: boolean) {
     const provider = memory();
@@ -267,7 +267,7 @@ describe("a letter that attaches something of its own", () => {
     return { provider, mailer };
   }
 
-  const invoice = { filename: "invoice.pdf", content: "JVBERi0=" };
+  const invoice = { filename: "invoice.pdf", content: { base64: "JVBERi0=" } };
 
   it("should attach its own and the caller's, in that order", async () => {
     const { provider, mailer } = attaching();
@@ -275,7 +275,7 @@ describe("a letter that attaches something of its own", () => {
     await mailer.sendTemplate("receipt", {
       to: ada,
       fields: { reference: "REF-1", invoice },
-      attachments: [{ filename: "extra.txt", content: "eA==" }],
+      attachments: [{ filename: "extra.txt", content: { base64: "eA==" } }],
     });
 
     expect(provider.sent[0]?.attachments?.map((one) => one.filename)).toEqual([

@@ -62,8 +62,10 @@ function base64(bytes: Uint8Array): string {
 function toResendAttachment(attachment: Attachment): Record<string, unknown> {
   return {
     filename: attachment.filename,
+    // `in` rather than `instanceof Uint8Array`, which is false for bytes made in another
+    // realm, so a worker's buffer would be read as the encoded shape and fail on `.base64`.
     content:
-      typeof attachment.content === "string" ? attachment.content : base64(attachment.content),
+      "base64" in attachment.content ? attachment.content.base64 : base64(attachment.content),
     ...(attachment.contentType === undefined ? {} : { content_type: attachment.contentType }),
     ...(attachment.inline === undefined ? {} : { content_id: attachment.inline.cid }),
   };

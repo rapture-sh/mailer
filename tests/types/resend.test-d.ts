@@ -68,7 +68,7 @@ describe("capabilities typed to the configured provider", () => {
   });
 
   it("should let both take attachments", async () => {
-    const attachments = [{ filename: "a.txt", content: "QQ==" }];
+    const attachments = [{ filename: "a.txt", content: { base64: "QQ==" } }];
 
     await onResend.send({ to: ada, subject: "Hi", text: "Hi", attachments });
     await onMemory.send({ to: ada, subject: "Hi", text: "Hi", attachments });

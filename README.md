@@ -574,9 +574,13 @@ await mailer.send({
 });
 ```
 
-`content` takes bytes or a base64 string. A provider that does not declare the attachments
-capability makes the option a compile error, and because that capability carries a byte
-limit, an oversized message comes back as `PayloadTooLarge` before anything is posted.
+`content` takes a `Uint8Array`, or `{ base64 }` when you already hold the file encoded. A
+bare string is not accepted on purpose: plain text is valid base64 often enough that
+`content: "Hello"` would arrive as five junk bytes with nothing to throw along the way, so
+the type makes you say which of the two you have. A provider that does not declare the
+attachments capability makes the option a compile error, and because that capability carries
+a byte limit, an oversized message comes back as `PayloadTooLarge` before anything is
+posted.
 
 **A letter can declare its own**, which is usually what you want: a logo is the same every
 time, and an invoice is always there even though its bytes are not.

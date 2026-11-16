@@ -26,7 +26,7 @@ export const templates = defineTemplates<Letters>({
       from: "notifications",
       subject: (fields) => `Receipt ${fields.reference}`,
       html: bodies["receipt"],
-      attachments: (fields) => [{ filename: "logo.png", content: files["receipt/logo.png"], contentType: "image/png", inline: { cid: "logo" } }, fields.invoice],
+      attachments: (fields) => [{ filename: "logo.png", content: { base64: files["receipt/logo.png"] }, contentType: "image/png", inline: { cid: "logo" } }, fields.invoice],
       sample: {
         reference: "REF-4182",
         activityName: "Kayak tour, Lake Thun",

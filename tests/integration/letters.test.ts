@@ -186,7 +186,11 @@ describe.skipIf(!reachable)("a letter that attaches files, over http", () => {
       fields: {
         reference: "REF-4182",
         invoice,
-        terms: { filename: "terms.txt", content: "VGVybXM=", contentType: "text/plain" },
+        terms: {
+          filename: "terms.txt",
+          content: { base64: "VGVybXM=" },
+          contentType: "text/plain",
+        },
       },
     });
 

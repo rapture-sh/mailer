@@ -13,7 +13,7 @@ const senders = {
   notifications: "Acme <notifications@example.com>",
 };
 
-const invoice: Attachment = { filename: "invoice.pdf", content: "JVBERi0=" };
+const invoice: Attachment = { filename: "invoice.pdf", content: { base64: "JVBERi0=" } };
 
 const mailer = createMailer({ provider: memory(), senders, from: "notifications", templates });
 
@@ -197,6 +197,35 @@ describe("a generated registry that contradicts itself", () => {
           sample: { note: "hi" },
         },
       },
+    });
+  });
+});
+
+/**
+ * The one shape in this package where a wrong value is not a type error anywhere and not a
+ * provider error either: a base64 string and a line of text are both strings, and most text
+ * decodes as valid base64, so a letter would go out with a file the reader cannot open.
+ */
+describe("an attachment's content", () => {
+  it("should take bytes", () => {
+    expectTypeOf<Uint8Array>().toExtend<Attachment["content"]>();
+  });
+
+  it("should take base64 that says it is base64", () => {
+    expectTypeOf<{ base64: string }>().toExtend<Attachment["content"]>();
+  });
+
+  it("should refuse a bare string, which could be either", () => {
+    expectTypeOf<string>().not.toExtend<Attachment["content"]>();
+  });
+
+  it("should refuse text passed as the content", async () => {
+    await mailer.send({
+      to: ada,
+      subject: "Receipt",
+      text: "Attached.",
+      // @ts-expect-error a string has to say whether it is base64: { base64: "SGk=" }
+      attachments: [{ filename: "note.txt", content: "Hello" }],
     });
   });
 });

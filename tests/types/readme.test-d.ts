@@ -149,7 +149,7 @@ describe("README: an internal letter and a named sender", () => {
           content: new Uint8Array(),
           contentType: "application/pdf",
         },
-        { filename: "logo.png", content: "iVBOR", inline: { cid: "logo" } },
+        { filename: "logo.png", content: { base64: "iVBOR" }, inline: { cid: "logo" } },
       ],
     });
   });

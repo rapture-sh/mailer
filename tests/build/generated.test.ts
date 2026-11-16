@@ -225,7 +225,7 @@ describe("a generated letter that attaches files", () => {
     contentType: "application/pdf",
   };
 
-  const terms = { filename: "terms.txt", content: "VGVybXM=" };
+  const terms = { filename: "terms.txt", content: { base64: "VGVybXM=" } };
 
   it("should attach the file its header named, encoded and content typed", async () => {
     const { provider, mailer } = setup();
@@ -238,8 +238,10 @@ describe("a generated letter that attaches files", () => {
     expect(provider.sent[0]?.attachments?.[0]).toEqual({
       filename: "logo.png",
       // The build read logo.png and inlined it, so nothing touches the filesystem here.
-      content:
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+      content: {
+        base64:
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFAAH/q842iQAAAABJRU5ErkJggg==",
+      },
       contentType: "image/png",
       inline: { cid: "logo" },
     });
@@ -291,7 +293,7 @@ describe("a generated letter that attaches files", () => {
     await mailer.sendTemplate("receipt", {
       to: ada,
       fields: { reference: "REF-4182", invoice },
-      attachments: [{ filename: "extra.txt", content: "RXh0cmE=" }],
+      attachments: [{ filename: "extra.txt", content: { base64: "RXh0cmE=" } }],
     });
 
     expect(provider.sent[0]?.attachments?.map((attachment) => attachment.filename)).toEqual([

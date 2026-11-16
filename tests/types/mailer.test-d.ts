@@ -114,7 +114,7 @@ describe("capabilities", () => {
       to: ada,
       subject: "Receipt",
       text: "Attached.",
-      attachments: [{ filename: "receipt.pdf", content: "JVBERi0=" }],
+      attachments: [{ filename: "receipt.pdf", content: { base64: "JVBERi0=" } }],
       idempotencyKey: "receipt-1",
       replyTo: "support@example.com",
       headers: { "X-Acme-Letter": "receipt" },

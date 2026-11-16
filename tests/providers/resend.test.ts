@@ -171,7 +171,9 @@ describe("resend, the request body", () => {
     await resend({ apiKey: "re_test", fetch }).send(
       {
         ...message,
-        attachments: [{ filename: "logo.png", content: "iVBOR", inline: { cid: "logo" } }],
+        attachments: [
+          { filename: "logo.png", content: { base64: "iVBOR" }, inline: { cid: "logo" } },
+        ],
       },
       {},
     );

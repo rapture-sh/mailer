@@ -144,7 +144,10 @@ describe("a union of providers that is not reduced", () => {
     await whichever.sendTemplate(
       // @ts-expect-error receipt.hbs attaches a logo and the no-files provider cannot
       "receipt",
-      { to: ada, fields: { reference: "REF-1", invoice: { filename: "i.pdf", content: "x" } } },
+      {
+        to: ada,
+        fields: { reference: "REF-1", invoice: { filename: "i.pdf", content: { base64: "eA==" } } },
+      },
     );
   });
 

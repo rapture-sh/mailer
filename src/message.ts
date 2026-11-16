@@ -6,8 +6,14 @@ export type Recipient = {
 
 export type Attachment = {
   filename: string;
-  /** Bytes, or an already base64 encoded string. A provider encodes it for its own API. */
-  content: Uint8Array | string;
+  /**
+   * The file's bytes, or `{ base64 }` when the caller already holds it encoded.
+   *
+   * A bare string is deliberately not accepted. Plain text is valid base64 often enough
+   * that `content: "Hello"` would be sent as five junk bytes, with nothing to throw and no
+   * provider to complain, so the caller has to say which of the two it is.
+   */
+  content: Uint8Array | { base64: string };
   contentType?: string;
   /** Present to reference the file from the html as `cid:<cid>` rather than attach it. */
   inline?: { cid: string };

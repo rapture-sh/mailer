@@ -59,7 +59,7 @@ export const templates = defineTemplates<Letters, typeof copy>({
       from: "notifications",
       subject: (fields) => `Receipt ${fields.reference}`,
       html: bodies["receipt"],
-      attachments: (fields) => [{ filename: "logo.png", content: files["receipt/logo.png"], contentType: "image/png", inline: { cid: "logo" } }, fields.invoice, ...(fields.terms === undefined ? [] : [fields.terms])],
+      attachments: (fields) => [{ filename: "logo.png", content: { base64: files["receipt/logo.png"] }, contentType: "image/png", inline: { cid: "logo" } }, fields.invoice, ...(fields.terms === undefined ? [] : [fields.terms])],
       sample: {
         reference: "REF-4182",
       },

@@ -291,7 +291,7 @@ describe("a letter's attachments", () => {
     const { module } = await run("subject: Hi\nattachments:\n  - path: logo.png");
 
     expect(module).toContain(
-      'attachments: () => [{ filename: "logo.png", content: files["note/logo.png"], contentType: "image/png" }]',
+      'attachments: () => [{ filename: "logo.png", content: { base64: files["note/logo.png"] }, contentType: "image/png" }]',
     );
   });
 

@@ -383,34 +383,34 @@ paths without a clock or a flaky network.
 speaks the Resend HTTP API, keeps the mail it is handed, and shows it to you in a dashboard,
 so you can open an email and look at it instead of hoping.
 
-```ts
-resend({ apiKey: "re_local", baseUrl: process.env.RESEND_BASE_URL });
-```
-
 ```bash
-RESEND_BASE_URL=http://localhost:3000 pnpm dev
+docker run --rm -p 9100:9100 raptureoss/mock-resend
 ```
-
-In production the base url is simply not read, so the same code posts to Resend:
 
 ```ts
-const isProduction = process.env.NODE_ENV === "production";
+import { mockResend } from "@rapture-sh/mailer/mock-resend";
 
-resend({
-  apiKey: process.env.RESEND_API_KEY ?? "",
-  baseUrl: isProduction ? "" : (process.env.RESEND_BASE_URL ?? ""),
-});
+const provider = isProduction ? resend({ apiKey }) : mockResend();
 ```
+
+That is the whole arrangement, and `mockResend()` is not a second provider: it is the
+`resend` provider with its base url preset, so both branches are the same `ResendProvider`.
+Development, CI and your deploy run one implementation, over the same wire format, with the
+same error mapping, the same backoff and the same capability types at the call site. Only
+the host changes.
 
 That is why there is no "dev" provider in this package, and why there never will be. A dev
 provider is a second code path that merely resembles the real one, and the first time it
-diverges you find out because a customer did not get an email. Pointing the real provider
-at a mock means your tests exercise the code that runs in production, over the same wire
-format, with only the host changed.
+diverges you find out because a customer did not get an email.
 
-One guard comes with it: the provider refuses a non-default `baseUrl` when `NODE_ENV` is
-`production`. A deploy that quietly posts real mail into a mock sends nothing, logs nothing
-and looks perfectly healthy, which is exactly the failure worth preventing.
+Two guards come with it, both at construction: `mockResend()` throws when `NODE_ENV` is
+`production`, and `resend()` refuses a non-default `baseUrl` there. A deploy that quietly
+posts real mail into a mock sends nothing, logs nothing and looks perfectly healthy, which
+is exactly the failure worth preventing.
+
+mock-resend can also fail on purpose. Ask it for a rate limit and you are testing your own
+retry and fallback paths against the body the live API answers with, rather than against a
+guess. [The example](examples/with-mock-resend/README.md) does exactly that.
 
 
 Providers
@@ -421,6 +421,11 @@ Providers
 `baseUrl` through, which is what makes the mock above work. It supports attachments,
 scheduling, idempotency keys, reply-to, custom headers, and Resend's own `tags`, `cc` and
 `bcc`. It does not wrap the SDK, so nothing is installed alongside it.
+
+**`mockResend(...)`** is that same provider pointed at a local
+[mock-resend](https://github.com/rapture-sh/mock-resend), with the port its image publishes
+already filled in. It takes `url` and `apiKey`, returns a `ResendProvider`, and refuses to
+be constructed when `NODE_ENV` is `production`.
 
 **`memory(...)`** is the test provider described above.
 
@@ -556,9 +561,10 @@ network. They live in [examples/](examples/README.md).
 | [letter-files](examples/letter-files/README.md) | Letters as `.hbs` files, registry generated from them |
 | [with-locales](examples/with-locales/README.md) | The same letters in two languages, with `Intl` formatting |
 | [testing](examples/testing/README.md) | Mail tested with no network and no API key |
+| [with-mock-resend](examples/with-mock-resend/README.md) | Real HTTP at a local mock, and mail you can open |
 
-More are planned, including one against mock-resend once it is finished, and thin Next.js
-and Convex setups. [Pull requests welcome.](#extending-it)
+More are planned, including thin Next.js and Convex setups.
+[Pull requests welcome.](#extending-it)
 
 
 Compatibility
@@ -569,7 +575,7 @@ Compatibility
 - **ESM only.** No CommonJS build.
 - **No dependencies**, so nothing lands in your install or your cold start. `handlebars`
   and `yaml` are optional peers used only by the build step.
-- Subpaths: `.`, `./resend`, `./memory`, `./build` and `./handlebars`. The published types
+- Subpaths: `.`, `./resend`, `./mock-resend`, `./memory`, `./build` and `./handlebars`. The published types
   are verified with [publint](https://publint.dev) and
   [are-the-types-wrong](https://arethetypeswrong.github.io) on every change, because a
   package whose selling point is types has to prove its own resolve.

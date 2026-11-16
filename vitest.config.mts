@@ -14,6 +14,9 @@ export default defineConfig({
       "@rapture-sh/mailer/handlebars": fileURLToPath(
         new URL("./src/handlebars.ts", import.meta.url),
       ),
+      "@rapture-sh/mailer/mock-resend": fileURLToPath(
+        new URL("./src/providers/mock-resend.ts", import.meta.url),
+      ),
       "@rapture-sh/mailer/memory": fileURLToPath(
         new URL("./src/providers/memory.ts", import.meta.url),
       ),

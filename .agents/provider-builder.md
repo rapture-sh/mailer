@@ -65,8 +65,9 @@ core knows nothing about it.
 - Do not retry, sleep, back off or batch inside a provider.
 - Do not throw for a mail failure. Construction-time programmer error throws; a response
   becomes a kind.
-- Do not add a dev or local provider. Local work points `resend` at `mock-resend` through
-  `baseUrl`, so development and production run the same code.
+- Do not add a dev or local provider. `mockResend()` is the `resend` provider with its base
+  url preset, so development and production run the same code. A provider that only runs
+  locally is the thing this package refuses to have.
 - Do not widen a type to make the options fit. If the conditional type is the problem,
   fix the conditional type.
 

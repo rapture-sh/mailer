@@ -44,9 +44,10 @@ Everything in `AGENTS.md` applies. The points worth repeating:
 - `AGENTS.md` names modules that have no code yet, so it is the contract for new work as
   much as a map of existing work. Do not assume a file is there because it is named,
   check.
-- There is deliberately **no local or dev provider**. Local work points the `resend`
-  provider at `mock-resend` through `baseUrl`, so development and production run the same
-  provider code. Do not add one.
+- There is deliberately **no local or dev provider**. `mockResend()` is the `resend`
+  provider with its base url preset and returns `ResendProvider`, so development and
+  production run the same provider code. Keep it that way: do not give it an
+  implementation of its own, and do not add a provider written for development.
 
 Agent playbooks live in `.agents/`: `provider-builder` implements a provider end to end,
 `type-guard-auditor` audits a diff for weakened type guarantees and broken boundaries,

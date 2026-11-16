@@ -13,8 +13,9 @@ Read them in this order if you are new to it.
 | [letter-files](letter-files/README.md) | Letters as `.hbs` files, with the registry generated from them | `pnpm example:files` |
 | [with-locales](with-locales/README.md) | The same letters in two languages, with `Intl` formatting | `pnpm example:locales` |
 | [testing](testing/README.md) | Mail tested with no network and no API key | `pnpm example:testing` |
+| [with-mock-resend](with-mock-resend/README.md) | Real HTTP at a local mock, and mail you can open | `pnpm example:mock` |
 
-All of them at once:
+All but the last at once, since that one wants a container running:
 
 ```bash
 pnpm examples
@@ -27,34 +28,20 @@ whether it is current, which is what CI runs:
 pnpm examples:build
 ```
 
-## Sending for real, and sending at a mock
+## Sending for real
 
-[with-locales](with-locales/README.md) also holds `send-through-resend.ts`, which posts
-through the real `resend` provider:
-
-```bash
-RESEND_BASE_URL=http://localhost:3000 pnpm example:resend
-```
-
-That is the production shape in miniature. The base url is read outside production and
-ignored inside it, so development points at a mock and production posts to Resend, and the
-provider refuses a non-default base url under `NODE_ENV=production` anyway:
+[with-mock-resend](with-mock-resend/README.md) is the production shape in miniature:
 
 ```ts
-const isProduction = process.env.NODE_ENV === "production";
-
-resend({
-  apiKey: process.env.RESEND_API_KEY ?? "",
-  baseUrl: isProduction ? "" : (process.env.RESEND_BASE_URL ?? ""),
-});
+const provider = isProduction ? resend({ apiKey }) : mockResend();
 ```
+
+Both branches are the same provider, so development, CI and the deploy run one
+implementation and only the host changes. Point the first branch at a live key and it
+really sends.
 
 ## Coming next
 
-- **with-mock-resend**, once [mock-resend](https://github.com/rapture-sh/mock-resend) is
-  finished: the same letters sent at a local mock of the Resend API, with a dashboard to
-  open each one in. Until then, `example:resend` above shows the swap and mock-resend is
-  the thing to point it at.
 - **with-nextjs** and **with-convex**, as thin as they can be: where the mailer is built,
   where the build script runs, and what a route handler or a server function sends.
 - **custom-provider**, showing how small the provider interface is, which is the most

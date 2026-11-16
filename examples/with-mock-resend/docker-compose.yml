@@ -1,0 +1,19 @@
+services:
+  email:
+    image: raptureoss/mock-resend:latest
+    ports:
+      # The Resend compatible API and the console, on one listener. This is the only port
+      # the mailer needs: it posts over HTTP and never speaks SMTP.
+      - "9100:9100"
+      # mock-resend also listens for SMTP on 1025. Publish it if something else in your
+      # stack sends that way, and leave it unpublished otherwise, since a mail catcher you
+      # already run is probably holding that port.
+      # - "1025:1025"
+    volumes:
+      - mock-resend-data:/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/mock-resend", "--healthcheck"]
+      interval: 10s
+
+volumes:
+  mock-resend-data:

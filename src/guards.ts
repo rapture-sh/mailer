@@ -29,3 +29,23 @@ export function assertBaseUrl(
       `Unset baseUrl for a production deployment.`,
   );
 }
+
+/**
+ * Refuses a provider that captures mail rather than delivering it, in production.
+ *
+ * The same reasoning as `assertBaseUrl`, one step earlier: a mock cannot be configured into
+ * a live deployment, so the mistake is caught at construction rather than by a customer who
+ * never got their receipt.
+ */
+export function assertNotProduction(
+  provider: string,
+  environment: string | undefined = currentEnvironment(),
+): void {
+  if (environment !== "production") return;
+
+  throw new Error(
+    `${provider}: NODE_ENV is production and this provider captures mail instead of ` +
+      `delivering it, so nobody would receive anything that was sent. ` +
+      `Use resend() with a live API key for a production deployment.`,
+  );
+}

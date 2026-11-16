@@ -10,7 +10,7 @@ export {
   placeholdersIn,
   translate,
 } from "./copy";
-export { assertBaseUrl, currentEnvironment } from "./guards";
+export { assertBaseUrl, assertNotProduction, currentEnvironment } from "./guards";
 export { type HelperHost, registerCopyHelpers } from "./handlebars";
 export {
   createMailer,

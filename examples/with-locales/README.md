@@ -8,9 +8,8 @@ emails/            one handlebars file per letter, plus the layout they share
 copy/              the catalogs, named nothing in particular
 build-emails.ts    the build script. in your own repo: scripts/build-emails.mjs
 generated/         what the build writes. committed, typechecked, never edited.
-mailer.ts          the senders and the registry, shared by both scripts
+mailer.ts          the senders and the registry
 send.ts            every letter in both locales through the memory provider
-send-through-resend.ts  the same letters through the resend provider
 ```
 
 ## Offline
@@ -46,33 +45,11 @@ and `de-CH`. None of that is a convention the package knows about: `build.ts` na
 paths and the locale names are the keys of that map. Call a locale `de`, `de-Test-CH` or
 `pirate` and it works the same way.
 
-## Against mock-resend
+## Over real HTTP
 
-[mock-resend](https://github.com/rapture-sh/mock-resend) is a Resend mock you can run
-locally: the same HTTP API, an inbox you can look at, and no mail leaving your machine.
-
-```bash
-RESEND_BASE_URL=http://localhost:3000 pnpm example:resend
-```
-
-Use whatever port mock-resend tells you it is listening on.
-
-**This is why the package ships no dev provider.** Pointing the `resend` provider at a mock
-means development and CI exercise the provider code that runs in production, over the same
-wire format, with only the host changed. A separate dev provider would be a second code
-path that merely resembles the real one, and the first time it diverged nobody would find
-out until a letter did not arrive.
-
-The provider refuses a non-default `baseUrl` when `NODE_ENV` is `production`, so this
-arrangement cannot be deployed by accident.
-
-## Against the real API
-
-```bash
-RESEND_BASE_URL=https://api.resend.com RESEND_API_KEY=re_... pnpm example:resend
-```
-
-It really sends, so change the addresses in `mailer.ts` to ones you own first.
+These letters go through the `memory` provider, which is what a test suite wants. To send
+the same thing over the wire at a local mock of the Resend API, and to read it in a
+console, see [with-mock-resend](../with-mock-resend/README.md).
 
 ## What to look for
 
@@ -89,8 +66,9 @@ It really sends, so change the addresses in `mailer.ts` to ones you own first.
   `copy/swiss-german.json` and it refuses that too, by name.
 - `send.ts` sends `feedback` with no reader at all, because that letter's header names
   its own inbox. Pass one and it still compiles, as an override.
-- `send-through-resend.ts` passes `sendAt` and `tags`. Move either line into `send.ts` and it
-  stops compiling, because the memory provider declares neither the schedule capability nor
-  Resend's own options.
+- Add `sendAt` or `tags` to a send in `send.ts` and it stops compiling, because the memory
+  provider declares neither the schedule capability nor Resend's own options. The same two
+  lines compile in [with-mock-resend](../with-mock-resend/README.md), which is configured
+  with the provider that declares them.
 
 Next: [testing](../testing/README.md), for what all of this is for.

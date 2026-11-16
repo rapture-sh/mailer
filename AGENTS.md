@@ -85,8 +85,8 @@ pnpm test:types              # vitest --typecheck, the primary suite
 pnpm test:coverage           # vitest run --coverage, with the thresholds CI enforces
 pnpm build                   # tsdown, writes dist
 pnpm check:exports           # publint and attw against the built package
-pnpm example                 # every letter through the memory provider, no network
-pnpm example:mock            # the same letters at mock-resend, needs RESEND_BASE_URL
+pnpm examples                # every example that needs nothing running
+pnpm example:mock            # at a local mock-resend, needs its container up
 pnpm changeset               # add a changeset for anything users notice
 ```
 
@@ -110,6 +110,7 @@ src/
   guards.ts                the construction-time assertions, baseUrl included
   providers/
     resend.ts              exported from "@rapture-sh/mailer/resend"
+    mock-resend.ts         exported from "@rapture-sh/mailer/mock-resend". resend, preset.
     memory.ts              exported from "@rapture-sh/mailer/memory"
   build/                   exported from "@rapture-sh/mailer/build". node only.
     index.ts               build(): letter files and catalogs in, one typed module out
@@ -122,10 +123,13 @@ tests/                     mirrors src/, one file per source file
   build/fixtures/          real letter files and three catalogs the build runs against
   build/generated/         their output, committed, typechecked and rendered by tests
 
-example/                   a caller's application, run against src/ with tsx
-  letters.ts               the senders and the registry, shared by both scripts
-  offline.ts               every letter through the memory provider
-  mock-resend.ts           the same letters through resend, pointed at a mock
+examples/                  one application per thing shown, run against src/ with tsx
+  basic-send/              one message, no templates
+  inline-templates/        typed letters declared in TypeScript
+  letter-files/            .hbs files, and the registry generated from them
+  with-locales/            the same letters in two languages
+  testing/                 mail tested with no network and no key
+  with-mock-resend/        real HTTP at a local mock, with its compose file
 ```
 
 Where things go:
@@ -142,7 +146,8 @@ Where things go:
   one attempt.
 - `tests/types/` is the primary suite. Everything else supports it.
 
-The `exports` map is part of the public API. Subpaths are `.`, `./resend` and `./memory`,
+The `exports` map is part of the public API. Subpaths are `.`, `./resend`,
+`./mock-resend`, `./memory`, `./build` and `./handlebars`,
 and adding one is a deliberate change with an `attw` run behind it, not a convenience.
 
 ## Adding a provider
@@ -180,9 +185,13 @@ behaving like the same mailer.
   provider-specific `send` overload.
 - `template.ts` owns field inference. A caller's field types come from the registry, so
   nothing downstream re-declares them.
-- `guards.ts` holds the construction-time assertions, including the one that permits a
-  non-default `baseUrl` only outside production. A misconfigured deploy posting mail into
-  a mock is silent and looks healthy, which is why this fails loudly instead.
+- `guards.ts` holds the construction-time assertions: the one that permits a non-default
+  `baseUrl` only outside production, and the one that refuses a mail-capturing provider in
+  production at all. A misconfigured deploy posting mail into a mock is silent and looks
+  healthy, which is why these fail loudly instead.
+- `providers/mock-resend.ts` is a configuration, not a provider. It returns the
+  `ResendProvider` with its base url preset, which is what keeps the development path and
+  the production path one code path. Do not grow it into an implementation of its own.
 
 ## Code style
 

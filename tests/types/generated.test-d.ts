@@ -72,6 +72,19 @@ describe("a generated registry", () => {
     });
   });
 
+  it("should require a field the subject's copy key names, however the body asks for it", async () => {
+    // reminder.hbs has it inside an #if, which is what makes a field optional everywhere
+    // else. A subject renders on every send, so this one is needed whatever the body did.
+    // @ts-expect-error reminder.subject names {activityName} and nothing passed one
+    await mailer.sendTemplate("reminder", { to: ada, fields: {} });
+  });
+
+  it("should still read that field as the type the body implied", () => {
+    expectTypeOf(templates().letters.reminder.body)
+      .parameter(0)
+      .toEqualTypeOf<{ activityName: string }>();
+  });
+
   it("should read a field's type off the helper the body passes it to", async () => {
     await mailer.sendTemplate("booking", {
       to: ada,
@@ -98,6 +111,54 @@ describe("a generated registry", () => {
       to: ada,
       // @ts-expect-error list joins strings, so a row object is not one
       fields: { ...booking, tickets: [{ name: "Adult" }] },
+    });
+  });
+});
+
+/**
+ * The sample is what a letter file already has to declare, and until it reached the
+ * registry it was only ever read by the build. A caller walking its own letters to render
+ * each one had to write the field values a second time, by hand.
+ */
+describe("the sample a letter's header declares", () => {
+  it("should be exactly the fields the letter renders", () => {
+    expectTypeOf(templates().letters.booking.sample).toEqualTypeOf<{
+      activityName: string;
+      currency: string;
+      participants: number;
+      startsAt: number | Date;
+      tickets: readonly string[];
+      timezone: string;
+      totalMinor: number;
+    }>();
+  });
+
+  it("should be enough on its own to send the letter with", async () => {
+    await mailer.sendTemplate("reminder", {
+      to: ada,
+      fields: templates().letters.reminder.sample,
+    });
+  });
+
+  it("should not be there for a letter that renders no fields", () => {
+    expectTypeOf(templates().letters.welcome).not.toHaveProperty("sample");
+  });
+
+  it("should leave out an attachment the caller passes, which has no sample value", async () => {
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      // @ts-expect-error there is no sample value for a file, so invoice is still the caller's
+      fields: templates().letters.receipt.sample,
+    });
+  });
+
+  it("should still be the rest of what that letter needs", async () => {
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: {
+        ...templates().letters.receipt.sample,
+        invoice: { filename: "invoice.pdf", content: { base64: "JVBERi0=" } },
+      },
     });
   });
 });

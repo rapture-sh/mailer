@@ -66,7 +66,13 @@ describe("a merged registry", () => {
     expectTypeOf(mailer.sendTemplate)
       .parameter(0)
       .toEqualTypeOf<
-        "booking" | "feedback" | "magic-code" | "receipt" | "welcome" | "password-reset"
+        | "booking"
+        | "feedback"
+        | "magic-code"
+        | "receipt"
+        | "reminder"
+        | "welcome"
+        | "password-reset"
       >();
   });
 });

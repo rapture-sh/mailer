@@ -6,5 +6,7 @@
   "magic-code.closing": "Falls du dich nicht anmelden wolltest, schreib an {supportLink}.",
   "booking.intro": "Deine Buchung für <strong>{activityName}</strong> ist für {participantCount} Personen bestätigt.",
   "booking.paid": "Du hast {totalAmount} bezahlt.",
-  "unused.key": "Danach fragt niemand."
+  "unused.key": "Danach fragt niemand.",
+  "reminder.subject": "{activityName} beginnt bald",
+  "reminder.heading": "Es geht bald los"
 }

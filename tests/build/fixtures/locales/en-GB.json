@@ -6,5 +6,7 @@
   "magic-code.closing": "If you did not try to sign in, write to {supportLink}.",
   "booking.intro": "Your booking for <strong>{activityName}</strong> is confirmed for {participantCount} people.",
   "booking.paid": "You paid {totalAmount}.",
-  "unused.key": "Nothing asks for this one."
+  "unused.key": "Nothing asks for this one.",
+  "reminder.subject": "{activityName} starts soon",
+  "reminder.heading": "Starting soon"
 }

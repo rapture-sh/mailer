@@ -1,5 +1,6 @@
 import { describe, expectTypeOf, it } from "vitest";
 import { createMailer } from "~/mailer";
+import type { NoOptions, Provider } from "~/provider";
 import { memory } from "~/providers/memory";
 import type { MailResult } from "~/result";
 
@@ -36,6 +37,18 @@ const mailer = createMailer({
 });
 
 const bare = createMailer({ provider: memory(), senders: { auth: "a@example.com" } });
+
+const noReplies = createMailer({
+  provider: {
+    name: "no-replies",
+    capabilities: ["headers"],
+    send: () => Promise.resolve({ ok: true, id: "1" }),
+  } satisfies Provider<"headers", NoOptions>,
+  senders: { auth: "a@example.com" },
+  templates: ({ letter }) => ({
+    welcome: letter({ subject: "Welcome to Acme", body: () => ({ text: "Welcome." }) }),
+  }),
+});
 
 describe("mailer.sendTemplate", () => {
   it("should take only a name from the registry", async () => {
@@ -129,6 +142,15 @@ describe("capabilities", () => {
   it("should refuse a scheduled letter too", async () => {
     // @ts-expect-error the memory provider declares no schedule capability
     await mailer.sendTemplate("welcome", { to: ada, sendAt: new Date() });
+  });
+
+  it("should take a reply-to beside a letter that declares one of its own", async () => {
+    await mailer.sendTemplate("feedback", { fields: { note: "slow" }, replyTo: "a@example.com" });
+  });
+
+  it("should refuse a reply-to where the provider declares none", async () => {
+    // @ts-expect-error this provider has no replyTo capability, so the option is not there
+    await noReplies.sendTemplate("welcome", { to: ada, replyTo: "a@example.com" });
   });
 
   it("should refuse an option no provider has", async () => {

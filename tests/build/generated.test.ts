@@ -132,6 +132,17 @@ describe("the copy", () => {
     expect(sent?.html).toContain("Ahoy Ada,");
   });
 
+  it("should fill a subject key with a field the body only asks for conditionally", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("reminder", {
+      to: { ...ada, locale: "de-CH" },
+      fields: { activityName: "Kayak tour" },
+    });
+
+    expect(provider.sent[0]?.subject).toBe("Kayak tour beginnt bald");
+  });
+
   it("should leave markup in the copy alone, because the copy is ours", async () => {
     const { provider, mailer } = setup();
 
@@ -215,6 +226,27 @@ describe("the formatters", () => {
     });
 
     expect(provider.sent[0]?.html).toContain("2 Adult und 1 Child");
+  });
+});
+
+describe("the sample a letter's header declares", () => {
+  it("should render the letter it belongs to with nothing else passed", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", { to: ada, fields: templates().letters.booking.sample });
+
+    expect(provider.sent[0]?.subject).toBe("Your booking for Kayak tour, Lake Thun is confirmed");
+  });
+
+  it("should render it in another locale just as well", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("reminder", {
+      to: { ...ada, locale: "pirate-Speak" },
+      fields: templates().letters.reminder.sample,
+    });
+
+    expect(provider.sent[0]?.subject).toBe("Kayak tour, Lake Thun be settin' sail soon");
   });
 });
 

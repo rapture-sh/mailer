@@ -6,8 +6,8 @@ import { type Attachment, defineTemplates } from "@rapture-sh/mailer";
 import { bodies, files } from "./templates.bodies";
 
 export type Letters = {
-  "magic-code": { addressed: "caller"; from: "auth"; fields: { code: string } };
-  "receipt": { addressed: "caller"; from: "notifications"; attachments: true; fields: { activityName: string; currency: string; invoice: Attachment; participants: number; reference: string; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
+  "magic-code": { addressed: "caller"; from: "auth"; sample: { code: string }; fields: { code: string } };
+  "receipt": { addressed: "caller"; from: "notifications"; attachments: true; sample: { activityName: string; currency: string; participants: number; reference: string; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number }; fields: { activityName: string; currency: string; invoice: Attachment; participants: number; reference: string; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
 };
 
 export const templates = defineTemplates<Letters>({

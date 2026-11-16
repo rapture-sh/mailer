@@ -9,7 +9,7 @@ import {
   type CompiledPartial,
   emitModules,
 } from "./emit";
-import { type CopyUse, type Fields, inferBody, subjectPlaceholders } from "./fields";
+import { type CopyUse, type Field, type Fields, inferBody, subjectPlaceholders } from "./fields";
 import { type LetterHeader, parseHeader, splitFile } from "./frontmatter";
 
 export {
@@ -237,6 +237,21 @@ function checkCatalogs(copy: LoadedCopy): void {
   }
 }
 
+/**
+ * A field a subject names, kept as the body typed it and made required.
+ *
+ * A subject is rendered for every send, so a field it names is always needed. The body's
+ * inference is the opposite where that field also appears inside an `{{#if}}`, which is
+ * inferred optional, and keeping that gave `t(key, { name })` a `string | undefined` where
+ * `CopyValues` takes `string | number`: the build reported success and wrote a module the
+ * consumer's compiler then refused.
+ */
+function required(field: Field | undefined): Field {
+  return field === undefined
+    ? { type: { kind: "string" }, optional: false }
+    : { ...field, optional: false };
+}
+
 /** Field types from the header always beat what the body implies. */
 function withWrittenTypes(fields: Fields, header: LetterHeader): Fields {
   const merged: Fields = { ...fields };
@@ -250,7 +265,7 @@ function withWrittenTypes(fields: Fields, header: LetterHeader): Fields {
 
   if ("text" in header.subject) {
     for (const name of subjectPlaceholders(header.subject.text)) {
-      merged[name] ??= { type: { kind: "string" }, optional: false };
+      merged[name] = required(merged[name]);
     }
   }
 
@@ -453,7 +468,7 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
           : [];
 
       for (const value of subjectValues) {
-        fields[value] ??= { type: { kind: "string" }, optional: false };
+        fields[value] = required(fields[value]);
       }
 
       pending.push({

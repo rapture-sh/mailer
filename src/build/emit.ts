@@ -137,6 +137,29 @@ function fieldsType(fields: Fields): string {
   return `{ ${entries.join("; ")} }`;
 }
 
+/**
+ * The fields the header's sample fills in, each one required.
+ *
+ * Required because the literal beside it supplies them, which is what lets a caller pass
+ * the sample straight to `sendTemplate`. An optional field the sample happens to name is
+ * in here too, for the same reason.
+ */
+function sampleType(letter: CompiledLetter): string {
+  const sample = letter.header.sample;
+
+  if (sample === undefined) return "";
+
+  const filled: Fields = {};
+
+  for (const name of Object.keys(sample)) {
+    const field = letter.fields[name];
+
+    if (field !== undefined) filled[name] = { ...field, optional: false };
+  }
+
+  return `sample: ${fieldsType(filled)}; `;
+}
+
 function sampleValue(value: unknown, field: Field | undefined): string {
   if (value instanceof Date) return `new Date(${quote(value.toISOString())})`;
 
@@ -220,8 +243,11 @@ export function emitModules(options: EmitOptions): EmittedModules {
     // Written into the type as well, so a provider that cannot send an attachment does not
     // offer this letter to `sendTemplate` rather than dropping the file at send time.
     const attached = letter.attachments.length === 0 ? "" : "attachments: true; ";
+    // What the sample covers, so a caller can render this letter without writing field
+    // values of their own. The build is what knows the sample is complete.
+    const sampled = sampleType(letter);
 
-    return `${INDENT}${quote(letter.name)}: { addressed: ${addressed}; ${from}${attached}fields: ${fieldsType(
+    return `${INDENT}${quote(letter.name)}: { addressed: ${addressed}; ${from}${attached}${sampled}fields: ${fieldsType(
       letter.fields,
     )} };`;
   });

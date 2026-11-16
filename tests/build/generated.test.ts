@@ -229,6 +229,27 @@ describe("the formatters", () => {
   });
 });
 
+describe("the sample a letter's header declares", () => {
+  it("should render the letter it belongs to with nothing else passed", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("booking", { to: ada, fields: templates().letters.booking.sample });
+
+    expect(provider.sent[0]?.subject).toBe("Your booking for Kayak tour, Lake Thun is confirmed");
+  });
+
+  it("should render it in another locale just as well", async () => {
+    const { provider, mailer } = setup();
+
+    await mailer.sendTemplate("reminder", {
+      to: { ...ada, locale: "pirate-Speak" },
+      fields: templates().letters.reminder.sample,
+    });
+
+    expect(provider.sent[0]?.subject).toBe("Kayak tour, Lake Thun be settin' sail soon");
+  });
+});
+
 describe("a generated letter that attaches files", () => {
   const invoice = {
     filename: "invoice.pdf",

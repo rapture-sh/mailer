@@ -151,6 +151,14 @@ export type GeneratedSpec = Record<
     from?: string;
     /** Present where the letter's header declared attachments. */
     attachments?: true;
+    /**
+     * The fields the header's sample fills in, where it has one.
+     *
+     * Written out rather than left as `Partial<fields>` so a consumer can hand it straight
+     * to `sendTemplate`: the build knows which fields the sample covers and that it covers
+     * every one the body renders.
+     */
+    sample?: object;
   }
 >;
 
@@ -170,7 +178,11 @@ export type GeneratedLetters<TSpec extends GeneratedSpec> = {
   [K in keyof TSpec]: GeneratedLetter<TSpec[K]["fields"]> &
     (TSpec[K] extends { attachments: true }
       ? { attachments: (fields: TSpec[K]["fields"]) => readonly Attachment[] }
-      : { attachments?: never });
+      : { attachments?: never }) &
+    // One direction only, unlike attachments: a spec that declares a sample has to have
+    // one, and a spec that declares none leaves `GeneratedLetter`'s own `sample` alone, so
+    // a module generated before the spec carried samples still compiles.
+    (TSpec[K] extends { sample: infer TSample } ? { sample: TSample } : Record<never, never>);
 };
 
 /**
@@ -185,11 +197,24 @@ type AttachmentsIn<TEntry, TFields> = TEntry extends { attachments: true }
   ? { attachments: Attachments<TFields> }
   : Record<never, never>;
 
+/**
+ * The sample half of a built letter's type, so a caller can render every letter it has.
+ *
+ * Exactly what the header's sample fills in, which is every field the body renders and
+ * nothing else, so `sendTemplate(name, { fields: letter.sample })` compiles. A letter that
+ * takes an attachment from the caller is not covered by its sample alone: there is no
+ * sample value for a file, so those fields are not in it and the call site adds them.
+ */
+type SampleIn<TEntry> = TEntry extends { sample: infer TSample }
+  ? { readonly sample: TSample }
+  : Record<never, never>;
+
 export type TemplatesFor<TSpec extends GeneratedSpec> = {
   [K in keyof TSpec]: (TSpec[K]["addressed"] extends "inbox"
     ? InternalLetter<TSpec[K]["fields"], FromIn<TSpec[K]>>
     : Letter<TSpec[K]["fields"], FromIn<TSpec[K]>>) &
-    AttachmentsIn<TSpec[K], TSpec[K]["fields"]>;
+    AttachmentsIn<TSpec[K], TSpec[K]["fields"]> &
+    SampleIn<TSpec[K]>;
 };
 
 /**
@@ -210,7 +235,10 @@ export type Registry<TLetters, TCopy> = {
 export function defineTemplates<TSpec extends GeneratedSpec, TCopy extends CopyConfig = never>(
   registry: GeneratedRegistry<TSpec, TCopy>,
 ): () => Registry<TemplatesFor<TSpec>, TCopy> {
-  const built: Record<string, SomeLetter> = {};
+  // The sample rides along rather than being read by anything here, which is why it is
+  // written into the type: the registry is what a caller walks to render every letter it
+  // has, and the build already checked that each sample covers its letter.
+  const built: Record<string, SomeLetter & { sample?: object }> = {};
 
   for (const [name, letter] of Object.entries(registry.letters)) {
     const render = (fields: Record<string, unknown>, context: RenderContext): Rendered => {
@@ -237,6 +265,7 @@ export function defineTemplates<TSpec extends GeneratedSpec, TCopy extends CopyC
       ...(letter.attachments === undefined
         ? {}
         : { attachments: (fields: Record<string, unknown>) => letter.attachments?.(fields) ?? [] }),
+      ...(letter.sample === undefined ? {} : { sample: letter.sample }),
     };
 
     built[name] =

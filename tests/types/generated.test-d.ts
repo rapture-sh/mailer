@@ -115,6 +115,54 @@ describe("a generated registry", () => {
   });
 });
 
+/**
+ * The sample is what a letter file already has to declare, and until it reached the
+ * registry it was only ever read by the build. A caller walking its own letters to render
+ * each one had to write the field values a second time, by hand.
+ */
+describe("the sample a letter's header declares", () => {
+  it("should be exactly the fields the letter renders", () => {
+    expectTypeOf(templates().letters.booking.sample).toEqualTypeOf<{
+      activityName: string;
+      currency: string;
+      participants: number;
+      startsAt: number | Date;
+      tickets: readonly string[];
+      timezone: string;
+      totalMinor: number;
+    }>();
+  });
+
+  it("should be enough on its own to send the letter with", async () => {
+    await mailer.sendTemplate("reminder", {
+      to: ada,
+      fields: templates().letters.reminder.sample,
+    });
+  });
+
+  it("should not be there for a letter that renders no fields", () => {
+    expectTypeOf(templates().letters.welcome).not.toHaveProperty("sample");
+  });
+
+  it("should leave out an attachment the caller passes, which has no sample value", async () => {
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      // @ts-expect-error there is no sample value for a file, so invoice is still the caller's
+      fields: templates().letters.receipt.sample,
+    });
+  });
+
+  it("should still be the rest of what that letter needs", async () => {
+    await mailer.sendTemplate("receipt", {
+      to: ada,
+      fields: {
+        ...templates().letters.receipt.sample,
+        invoice: { filename: "invoice.pdf", content: { base64: "JVBERi0=" } },
+      },
+    });
+  });
+});
+
 describe("the locales the catalogs declare", () => {
   it("should take a locale a catalog is named after", async () => {
     await mailer.sendTemplate("welcome", { to: { ...ada, locale: "de-CH" } });

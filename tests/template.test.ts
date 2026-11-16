@@ -109,6 +109,29 @@ describe("defineTemplates", () => {
   });
 });
 
+describe("defineTemplates, the sample", () => {
+  it("should keep the sample a generated letter carries", () => {
+    const templates = defineTemplates<{
+      plain: { addressed: "caller"; sample: { note: string }; fields: { note: string } };
+    }>({
+      letters: {
+        plain: {
+          addressed: "caller",
+          subject: "A plain letter",
+          html: bodies.plain,
+          sample: { note: "hello" },
+        },
+      },
+    });
+
+    expect(templates().letters.plain.sample).toEqual({ note: "hello" });
+  });
+
+  it("should leave it off a letter that has none", () => {
+    expect(setup().templates().letters.plain).not.toHaveProperty("sample");
+  });
+});
+
 describe("letterBuilder", () => {
   it("should add the discriminant a caller cannot write themselves", () => {
     const { letter, internal } = letterBuilder();

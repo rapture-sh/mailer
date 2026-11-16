@@ -266,6 +266,19 @@ A file with a header is a letter. A file without one is a partial, which is how
 `layout.hbs` is recognised without being configured anywhere. `check: true` writes nothing
 and reports whether what is committed is current, which is what belongs in CI.
 
+The sample reaches the registry as well, typed as exactly the fields that letter renders,
+so a letter can be sent with no field values written out a second time:
+
+```ts
+const { letters } = templates();
+
+await mailer.sendTemplate("booking", { to, fields: letters.booking.sample });
+```
+
+That is what a "every letter, in every locale, nothing throws" test is made of. A letter
+that takes an attachment from the caller is the one exception, because there is no sample
+value for a file: its sample is the rest of the letter and the call site adds the file.
+
 
 Translations
 ------------

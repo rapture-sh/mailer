@@ -6,9 +6,9 @@ import { defineTemplates } from "@rapture-sh/mailer";
 import { bodies, copy } from "./templates.bodies";
 
 export type Letters = {
-  "booking-confirmation": { addressed: "caller"; from: "notifications"; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
-  "feedback": { addressed: "inbox"; fields: { from: string; note: string; page: string } };
-  "magic-code": { addressed: "caller"; from: "auth"; fields: { code: string } };
+  "booking-confirmation": { addressed: "caller"; from: "notifications"; sample: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number }; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };
+  "feedback": { addressed: "inbox"; sample: { from: string; note: string; page: string }; fields: { from: string; note: string; page: string } };
+  "magic-code": { addressed: "caller"; from: "auth"; sample: { code: string }; fields: { code: string } };
   "welcome": { addressed: "caller"; fields: Record<never, never> };
 };
 

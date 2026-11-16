@@ -91,7 +91,7 @@ describe("the module it writes", () => {
 
   it("should read a field off a placeholder in the body", () => {
     expect(module).toContain(
-      '"magic-code": { addressed: "caller"; from: "auth"; fields: { code: string } };',
+      '"magic-code": { addressed: "caller"; from: "auth"; sample: { code: string }; fields: { code: string } };',
     );
   });
 
@@ -101,7 +101,7 @@ describe("the module it writes", () => {
 
   it("should mark a letter with an inbox as addressed by itself", () => {
     expect(module).toContain(
-      '"feedback": { addressed: "inbox"; fields: { from: string; note: string } };',
+      '"feedback": { addressed: "inbox"; sample: { from: string; note: string }; fields: { from: string; note: string } };',
     );
   });
 
@@ -112,7 +112,7 @@ describe("the module it writes", () => {
 
   it("should read an each block as rows and an if block as optional", () => {
     expect(module).toContain(
-      '"booking": { addressed: "caller"; from: "notifications"; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };',
+      '"booking": { addressed: "caller"; from: "notifications"; sample: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number }; fields: { activityName: string; currency: string; participants: number; startsAt: number | Date; tickets: readonly string[]; timezone: string; totalMinor: number; voucherCode?: string } };',
     );
   });
 
@@ -134,10 +134,18 @@ describe("the module it writes", () => {
     // Emitted optional, t() here would be handed a string | undefined and the generated
     // module would not compile.
     expect(module).toContain(
-      '"reminder": { addressed: "caller"; from: "notifications"; fields: { activityName: string } };',
+      '"reminder": { addressed: "caller"; from: "notifications"; sample: { activityName: string }; fields: { activityName: string } };',
     );
     expect(module).toContain(
       'subject: (fields, { t }) => t("reminder.subject", { activityName: fields.activityName }),',
+    );
+  });
+
+  it("should write what the sample covers into the type beside the fields", () => {
+    // receipt.hbs takes its invoice from the caller, and there is no sample value for a
+    // file, so the sample is the rest of the letter and the call site adds the attachment.
+    expect(module).toContain(
+      '"receipt": { addressed: "caller"; from: "notifications"; attachments: true; sample: { reference: string }; fields: { invoice: Attachment; reference: string; terms?: Attachment } };',
     );
   });
 

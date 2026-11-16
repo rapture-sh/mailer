@@ -28,14 +28,23 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer, and the npm a Node release ships
+      # with is older than that often enough to be worth pinning rather than hoping.
+      - run: npm install --global npm@latest
+
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
 
       # Opens and maintains the version pull request while changesets are pending, then
       # publishes when that pull request merges and a version is left to release.
+      #
+      # No NODE_AUTH_TOKEN on purpose. Publishing goes through the OIDC exchange that
+      # `id-token: write` above allows, and an empty token here would put an empty auth
+      # line in the .npmrc for npm to try first.
       - uses: changesets/action@v1
         with:
           version: pnpm changeset version
@@ -44,4 +53,8 @@ jobs:
           title: "chore: release"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # `changeset tag` writes the tags locally. This changesets version reports them as
+      # "Created git tags:", which is not the shape the action parses, so it does not push
+      # them itself. A run that published nothing has none to push and this does nothing.
+      - run: git push --tags

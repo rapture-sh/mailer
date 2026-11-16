@@ -68,7 +68,7 @@ it.
 - Biome for lint and format
 - Vitest for both tiers of tests, with `--typecheck` and `expectTypeOf` for the type tier
 - `publint` and `@arethetypeswrong/cli` against the built package
-- Changesets for versioning, `npm publish --provenance` from CI
+- Changesets for versioning, and npm trusted publishing from CI, so there is no token
 - No dependencies, runtime or peer. The `resend` provider posts to the documented HTTP API
   rather than wrapping the SDK, so there is nothing to make optional and `baseUrl` is
   certainly honoured
@@ -408,6 +408,17 @@ They are the same commands `pnpm check` runs locally, so a green local run shoul
 green CI run.
 
 `.github/workflows/release.yml` runs Changesets on `main`. It keeps the version pull
-request up to date while changesets are pending, and publishes with provenance when that
-pull request merges. It needs one repository secret, `NPM_TOKEN`, with publish rights on
-the `@rapture-sh` scope.
+request up to date while changesets are pending, and publishes when that pull request
+merges.
+
+**There is no publish token.** The registry is given `id-token: write` and npm exchanges
+that for the right to publish this package, which is npm's trusted publishing, and
+provenance comes with it. So the release job holds no `NODE_AUTH_TOKEN` at all: an empty
+one writes an empty auth line into the `.npmrc` that `setup-node` generates, and npm tries
+that before the exchange. `changeset publish` is not the client that speaks OIDC either,
+which is why `pnpm release` is `npm publish` for the one package here and `changeset tag`
+for the tags.
+
+The trusted publisher is configured once in the package's settings on npmjs.com, against
+this repository and `release.yml`, and a package has to exist before it can be configured.
+So version `0.1.0` is published by hand, and every release after it comes from CI.

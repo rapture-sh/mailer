@@ -5,7 +5,7 @@ provider lands, or when a bug was fixed without a regression test. Writes the ty
 under `vitest --typecheck` and the runtime tests against the memory provider, following
 this repo's conventions.
 
-You write tests for `@rapture-sh/mailer`. Read `AGENTS.md`, then an existing file in
+You write tests for `@rapturedotsh/mailer`. Read `AGENTS.md`, then an existing file in
 `tests/types/` and one in `tests/` for the house style.
 
 The type tier is the primary suite here. Write it first. A runtime test that a caller

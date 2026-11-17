@@ -24,12 +24,12 @@
     "noEmit": true,
     "paths": {
       "~/*": ["./src/*"],
-      "@rapture-sh/mailer": ["./src/index.ts"],
-      "@rapture-sh/mailer/build": ["./src/build/index.ts"],
-      "@rapture-sh/mailer/handlebars": ["./src/handlebars.ts"],
-      "@rapture-sh/mailer/resend": ["./src/providers/resend.ts"],
-      "@rapture-sh/mailer/mock-resend": ["./src/providers/mock-resend.ts"],
-      "@rapture-sh/mailer/memory": ["./src/providers/memory.ts"]
+      "@rapturedotsh/mailer": ["./src/index.ts"],
+      "@rapturedotsh/mailer/build": ["./src/build/index.ts"],
+      "@rapturedotsh/mailer/handlebars": ["./src/handlebars.ts"],
+      "@rapturedotsh/mailer/resend": ["./src/providers/resend.ts"],
+      "@rapturedotsh/mailer/mock-resend": ["./src/providers/mock-resend.ts"],
+      "@rapturedotsh/mailer/memory": ["./src/providers/memory.ts"]
     }
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "examples/**/*.ts", "*.ts", "*.mts"]

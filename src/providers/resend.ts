@@ -214,7 +214,7 @@ export function resend(config: ResendConfig): ResendProvider {
             "Content-Type": "application/json",
             Authorization: `Bearer ${config.apiKey}`,
             // Resend answers 403 to a request with no User-Agent.
-            "User-Agent": "@rapture-sh/mailer",
+            "User-Agent": "@rapturedotsh/mailer",
             ...(message.idempotencyKey === undefined
               ? {}
               : { "Idempotency-Key": message.idempotencyKey }),

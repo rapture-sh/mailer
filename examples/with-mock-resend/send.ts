@@ -1,5 +1,5 @@
-import type { MailResult } from "@rapture-sh/mailer";
-import { mockResendConsole } from "@rapture-sh/mailer/mock-resend";
+import type { MailResult } from "@rapturedotsh/mailer";
+import { mockResendConsole } from "@rapturedotsh/mailer/mock-resend";
 import { mailer, reader } from "./mailer";
 
 /**

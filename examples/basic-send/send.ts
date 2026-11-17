@@ -1,5 +1,5 @@
-import { createMailer } from "@rapture-sh/mailer";
-import { memory } from "@rapture-sh/mailer/memory";
+import { createMailer } from "@rapturedotsh/mailer";
+import { memory } from "@rapturedotsh/mailer/memory";
 
 /**
  * The smallest thing that works: one message, no templates, no types to declare.

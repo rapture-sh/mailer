@@ -1,5 +1,5 @@
-import type { Retry, SomeProvider } from "@rapture-sh/mailer";
-import { createMailer } from "@rapture-sh/mailer";
+import type { Retry, SomeProvider } from "@rapturedotsh/mailer";
+import { createMailer } from "@rapturedotsh/mailer";
 
 /**
  * The registry an application would export, taking its provider from the outside so a test

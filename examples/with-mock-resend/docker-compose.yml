@@ -1,6 +1,6 @@
 services:
   email:
-    image: raptureoss/mock-resend:latest
+    image: rapturedotsh/mock-resend:latest
     ports:
       # The Resend compatible API and the console, on one listener. This is the only port
       # the mailer needs: it posts over HTTP and never speaks SMTP.

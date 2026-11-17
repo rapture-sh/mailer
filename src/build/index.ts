@@ -555,7 +555,7 @@ export async function build(options: BuildOptions): Promise<BuildResult> {
       typeof options.letters === "string"
         ? forwardSlashes(relative(cwd, at(options.letters))) || "."
         : `${files.length} files`,
-    packageImport: options.packageImport ?? "@rapture-sh/mailer",
+    packageImport: options.packageImport ?? "@rapturedotsh/mailer",
     bodiesImport: `./${bodiesName}`,
     ...(copy === undefined
       ? {}

@@ -6,7 +6,7 @@ import { templates } from "../build/generated/templates";
 /**
  * The harness for the integration tier: a real mock-resend over real HTTP.
  *
- *   docker run --rm -p 9100:9100 raptureoss/mock-resend
+ *   docker run --rm -p 9100:9100 rapturedotsh/mock-resend
  *   pnpm test:integration
  *
  * Nothing here stubs anything. These tests exist because the unit tier proves what this
@@ -33,7 +33,7 @@ export const reachable = await fetch(`${BASE}/_admin/console/`, {
 if (!reachable && process.env.MOCK_RESEND_REQUIRED === "1") {
   throw new Error(
     `MOCK_RESEND_REQUIRED is set and there is no mock-resend at ${BASE}. ` +
-      "Start it with: docker run --rm -p 9100:9100 raptureoss/mock-resend",
+      "Start it with: docker run --rm -p 9100:9100 rapturedotsh/mock-resend",
   );
 }
 

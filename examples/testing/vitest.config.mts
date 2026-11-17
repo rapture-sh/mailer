@@ -11,10 +11,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@rapture-sh/mailer/memory": fileURLToPath(
+      "@rapturedotsh/mailer/memory": fileURLToPath(
         new URL("../../src/providers/memory.ts", import.meta.url),
       ),
-      "@rapture-sh/mailer": fileURLToPath(new URL("../../src/index.ts", import.meta.url)),
+      "@rapturedotsh/mailer": fileURLToPath(new URL("../../src/index.ts", import.meta.url)),
     },
   },
   test: {

@@ -89,7 +89,7 @@ describe("resend", () => {
 
     await resend({ apiKey: "re_test", fetch }).send(message, {});
 
-    expect(headerOf(calls[0], "user-agent")).toBe("@rapture-sh/mailer");
+    expect(headerOf(calls[0], "user-agent")).toBe("@rapturedotsh/mailer");
   });
 
   it("should send an idempotency key as resend's own header", async () => {

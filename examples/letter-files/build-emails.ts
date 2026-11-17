@@ -1,4 +1,4 @@
-import { build } from "@rapture-sh/mailer/build";
+import { build } from "@rapturedotsh/mailer/build";
 
 /**
  * The build script. In your own repo this is `scripts/build-emails.mjs`, run by node, and

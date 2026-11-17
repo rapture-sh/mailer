@@ -1,5 +1,5 @@
-import { mockResend } from "@rapture-sh/mailer/mock-resend";
-import { resend } from "@rapture-sh/mailer/resend";
+import { mockResend } from "@rapturedotsh/mailer/mock-resend";
+import { resend } from "@rapturedotsh/mailer/resend";
 
 /**
  * The one thing to copy out of this example.

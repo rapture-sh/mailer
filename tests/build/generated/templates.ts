@@ -2,7 +2,7 @@
 //
 // 6 letters, 1 partial, 3 locales. Change a letter file and run the build again.
 
-import { type Attachment, defineTemplates } from "@rapture-sh/mailer";
+import { type Attachment, defineTemplates } from "@rapturedotsh/mailer";
 import { bodies, files, copy } from "./templates.bodies";
 
 export type Letters = {

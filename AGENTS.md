@@ -4,7 +4,7 @@ Guide for humans and AI agents working in this repo. Read this before writing co
 
 ## What this is
 
-`@rapture-sh/mailer` is a provider-agnostic, end-to-end type-safe mail library for
+`@rapturedotsh/mailer` is a provider-agnostic, end-to-end type-safe mail library for
 TypeScript. A caller declares a typed template registry once, then sends by template name
 with typed fields. Providers are pluggable, and the configured provider's capabilities
 reach the call site as types.
@@ -112,14 +112,14 @@ src/
   provider.ts              the Provider interface and the helpers that read its types
   copy.ts                  translate, the escaping rule and the Intl formatters
   text.ts                  the text part derived from a rendered html body
-  handlebars.ts            exported from "@rapture-sh/mailer/handlebars". the helper glue.
+  handlebars.ts            exported from "@rapturedotsh/mailer/handlebars". the helper glue.
   retry.ts                 backoff over the transient kinds only
   guards.ts                the construction-time assertions, baseUrl included
   providers/
-    resend.ts              exported from "@rapture-sh/mailer/resend"
-    mock-resend.ts         exported from "@rapture-sh/mailer/mock-resend". resend, preset.
-    memory.ts              exported from "@rapture-sh/mailer/memory"
-  build/                   exported from "@rapture-sh/mailer/build". node only.
+    resend.ts              exported from "@rapturedotsh/mailer/resend"
+    mock-resend.ts         exported from "@rapturedotsh/mailer/mock-resend". resend, preset.
+    memory.ts              exported from "@rapturedotsh/mailer/memory"
+  build/                   exported from "@rapturedotsh/mailer/build". node only.
     index.ts               build(): letter files and catalogs in, one typed module out
     frontmatter.ts         the --- header, and what makes a file a letter
     fields.ts              the handlebars syntax tree to field types and copy keys
@@ -314,7 +314,7 @@ Write the comment next to it saying what should have failed, because a stray
 
 **Integration tests** live in `tests/integration/`, run under `vitest.integration.mts`
 with `pnpm test:integration`, and post through the `resend` provider at a real
-[mock-resend](https://github.com/rapture-sh/mock-resend) container. They are the only tests
+[mock-resend](https://github.com/rapturedotsh/mock-resend) container. They are the only tests
 that touch a socket, and they exist for the one thing the other tiers cannot do: prove the
 error mapping against the bodies and statuses a Resend compatible API actually answers
 with, by asking the server to fail on purpose through its admin API. They skip themselves
@@ -417,11 +417,12 @@ provenance comes with it. So the release job holds no `NODE_AUTH_TOKEN` at all: 
 one writes an empty auth line into the `.npmrc` that `setup-node` generates, and npm tries
 that before the exchange. `changeset publish` is no use either: in a pnpm repository it
 publishes with pnpm, which does not do the exchange, so the workflow calls `npm publish`
-itself and `changeset git-tag` for the tags.
+itself, and tags with git.
 
 The trusted publisher is configured once in the package's settings on npmjs.com, against
 this repository and `release.yml`, and a package has to exist before it can be configured.
-So version `0.1.0` was published by hand, and every release after it comes from CI.
+So version `0.0.0` was published by hand under the `@rapturedotsh` scope, and every
+release from `0.1.0` on comes from CI.
 
 The publish step asks the registry whether the version is already there and stops if it
 is. It runs on every push to `main`, and `npm publish` has nothing like changesets' check
@@ -445,13 +446,14 @@ ships the version nobody has merged, from an ordinary push to `main`.
 
 It tags with `git tag "v$version"` rather than `changeset git-tag`. That command reads what
 to tag out of `@manypkg/get-packages`, which finds no packages in a repository with no
-`pnpm-workspace.yaml`, so it exits 0 having tagged nothing: `v0.1.1` had to be pushed by
-hand. Nothing in the release path needs changesets except the version pull request itself.
+`pnpm-workspace.yaml`, so it exits 0 having tagged nothing and the release it was meant to
+tag had to be tagged by hand. Nothing in the release path needs changesets except the
+version pull request itself.
 
 ## Dependencies and protection
 
-Renovate owns every version update, under one policy shared by every rapture-sh repository:
-`renovate-config.json` in `rapture-sh/.github`, which `.github/renovate.json` here extends
+Renovate owns every version update, under one policy shared by every rapturedotsh repository:
+`renovate-config.json` in `rapturedotsh/.github`, which `.github/renovate.json` here extends
 and nothing else. It holds a new release for seven days before offering it, unless the
 dependency carries a published advisory, which skips the wait. Dependabot is enabled for
 alerts and security fixes only, with no `dependabot.yml`, so one bump never arrives as two

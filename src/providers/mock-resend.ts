@@ -3,7 +3,7 @@ import { type ResendProvider, resend } from "./resend";
 
 /**
  * The port the mock-resend image publishes, which serves the Resend compatible API and the
- * console on one listener. https://github.com/rapture-sh/mock-resend
+ * console on one listener. https://github.com/rapturedotsh/mock-resend
  */
 export const MOCK_RESEND_URL = "http://localhost:9100";
 

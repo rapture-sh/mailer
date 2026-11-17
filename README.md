@@ -1,4 +1,4 @@
-@rapture-sh/mailer
+@rapturedotsh/mailer
 ==================
 
 Typed transactional mail for TypeScript. Write each email once, in as many languages as you
@@ -6,7 +6,7 @@ need, and send it by name with the fields it asks for. Test the whole thing with
 anything to anyone.
 
 ```bash
-pnpm add @rapture-sh/mailer
+pnpm add @rapturedotsh/mailer
 ```
 
 
@@ -42,7 +42,7 @@ What you get
 ------------
 
 - **A mock you can actually use.** The `memory` provider for unit tests, and
-  [mock-resend](https://github.com/rapture-sh/mock-resend) for local work: real HTTP, real
+  [mock-resend](https://github.com/rapturedotsh/mock-resend) for local work: real HTTP, real
   provider code, a dashboard to look at, nothing leaving your machine.
 - **Letters as files.** One handlebars file per email, a shared layout, and the build reads
   the field types off the body. No TypeScript to write per email.
@@ -82,11 +82,11 @@ Install
 -------
 
 ```bash
-pnpm add @rapture-sh/mailer
+pnpm add @rapturedotsh/mailer
 ```
 
 ```bash
-npm install @rapture-sh/mailer
+npm install @rapturedotsh/mailer
 ```
 
 Node 22 or newer, ESM only, no dependencies. If you want letters as files, the build step
@@ -103,8 +103,8 @@ Send one email
 Start here. No templates, no types to declare, nothing generated.
 
 ```ts
-import { createMailer } from "@rapture-sh/mailer";
-import { resend } from "@rapture-sh/mailer/resend";
+import { createMailer } from "@rapturedotsh/mailer";
+import { resend } from "@rapturedotsh/mailer/resend";
 
 const mailer = createMailer({
   provider: resend({ apiKey: process.env.RESEND_API_KEY ?? "" }),
@@ -198,7 +198,7 @@ a command this package owns:
 
 ```js
 // scripts/build-emails.mjs
-import { build } from "@rapture-sh/mailer/build";
+import { build } from "@rapturedotsh/mailer/build";
 
 await build({
   letters: "emails",
@@ -378,7 +378,7 @@ The reason this package exists, and the part to set up first.
 [worked example](examples/testing/README.md) of this:
 
 ```ts
-import { memory } from "@rapture-sh/mailer/memory";
+import { memory } from "@rapturedotsh/mailer/memory";
 
 const provider = memory();
 const mailer = createMailer({ provider, senders, templates });
@@ -394,16 +394,16 @@ It records the whole message: sender, recipient, subject, both bodies, attachmen
 paths without a clock or a flaky network.
 
 **Locally and in CI, point the real provider at a mock.**
-[mock-resend](https://github.com/rapture-sh/mock-resend) is our companion project: it
+[mock-resend](https://github.com/rapturedotsh/mock-resend) is our companion project: it
 speaks the Resend HTTP API, keeps the mail it is handed, and shows it to you in a dashboard,
 so you can open an email and look at it instead of hoping.
 
 ```bash
-docker run --rm -p 9100:9100 raptureoss/mock-resend
+docker run --rm -p 9100:9100 rapturedotsh/mock-resend
 ```
 
 ```ts
-import { mockResend } from "@rapture-sh/mailer/mock-resend";
+import { mockResend } from "@rapturedotsh/mailer/mock-resend";
 
 const provider = isProduction ? resend({ apiKey }) : mockResend();
 ```
@@ -438,7 +438,7 @@ scheduling, idempotency keys, reply-to, custom headers, and Resend's own `tags`,
 `bcc`. It does not wrap the SDK, so nothing is installed alongside it.
 
 **`mockResend(...)`** is that same provider pointed at a local
-[mock-resend](https://github.com/rapture-sh/mock-resend), with the port its image publishes
+[mock-resend](https://github.com/rapturedotsh/mock-resend), with the port its image publishes
 already filled in. It takes `url` and `apiKey`, returns a `ResendProvider`, and refuses to
 be constructed when `NODE_ENV` is `production`.
 

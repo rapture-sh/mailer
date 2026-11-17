@@ -84,7 +84,7 @@ describe("the module it writes", () => {
     // Attachment comes with it here because a fixture letter declares one the caller
     // passes, which is a field typed as an Attachment.
     expect(module).toContain(
-      'import { type Attachment, defineTemplates } from "@rapture-sh/mailer";',
+      'import { type Attachment, defineTemplates } from "@rapturedotsh/mailer";',
     );
     expect(module).toContain('import { bodies, files, copy } from "./templates.bodies";');
   });

@@ -1,4 +1,4 @@
-# Contributing to @rapture-sh/mailer
+# Contributing to @rapturedotsh/mailer
 
 Thanks for being here. You do not need permission to start, though opening an issue first
 is a good way to talk something through. A new provider, or a capability that an existing
@@ -68,7 +68,7 @@ needs no key and no network:
 pnpm example
 ```
 
-For the `resend` provider, run [mock-resend](https://github.com/rapture-sh/mock-resend) and
+For the `resend` provider, run [mock-resend](https://github.com/rapturedotsh/mock-resend) and
 point the example at it. Development then exercises the provider code that runs in
 production, which is why this package ships no dev provider:
 
@@ -138,7 +138,7 @@ transitive dependency is weight on a cold start.
 The runtime has no dependencies at all, and the `resend` provider stays
 that way by posting to the documented HTTP API rather than wrapping the SDK. If a provider
 genuinely needs an SDK, it is an **optional peer dependency**, never a dependency:
-installing `@rapture-sh/mailer` must not install it. Say so in the PR description and add
+installing `@rapturedotsh/mailer` must not install it. Say so in the PR description and add
 it to the `exports` map and the peer dependency meta.
 
 The build entry is the one exception, and the reason the mechanism exists: it needs

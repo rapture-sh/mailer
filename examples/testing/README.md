@@ -29,7 +29,7 @@ What it shows:
 - **Idempotency is real.** A repeated key sends one message, which is what makes a retried
   job safe, and the test proves it rather than assuming it.
 
-One level up from here is [mock-resend](https://github.com/rapture-sh/mock-resend) for local
+One level up from here is [mock-resend](https://github.com/rapturedotsh/mock-resend) for local
 and integration work: real HTTP, the real provider, and a dashboard to open the mail in.
 See [with-locales](../with-locales/README.md) for how the base url is swapped in
 development and ignored in production.

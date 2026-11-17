@@ -1,4 +1,4 @@
-import { memory } from "@rapture-sh/mailer/memory";
+import { memory } from "@rapturedotsh/mailer/memory";
 import { describe, expect, it } from "vitest";
 import { mailerFor } from "./mailer";
 

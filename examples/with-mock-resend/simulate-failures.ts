@@ -1,4 +1,4 @@
-import { MOCK_RESEND_API_KEY, MOCK_RESEND_URL, mockResend } from "@rapture-sh/mailer/mock-resend";
+import { MOCK_RESEND_API_KEY, MOCK_RESEND_URL, mockResend } from "@rapturedotsh/mailer/mock-resend";
 import { mailer, reader } from "./mailer";
 
 /**

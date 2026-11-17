@@ -1,6 +1,6 @@
 {
-  "name": "@rapture-sh/mailer",
-  "version": "0.1.1",
+  "name": "@rapturedotsh/mailer",
+  "version": "0.0.0",
   "description": "Provider-agnostic, end-to-end type-safe mail for TypeScript, where a provider's capabilities are types rather than runtime flags.",
   "keywords": [
     "email",
@@ -12,13 +12,13 @@
     "provider"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/rapture-sh/mailer#readme",
+  "homepage": "https://github.com/rapturedotsh/mailer#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rapture-sh/mailer.git"
+    "url": "git+https://github.com/rapturedotsh/mailer.git"
   },
   "bugs": {
-    "url": "https://github.com/rapture-sh/mailer/issues"
+    "url": "https://github.com/rapturedotsh/mailer/issues"
   },
   "type": "module",
   "sideEffects": false,

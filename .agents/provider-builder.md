@@ -4,7 +4,7 @@
 or reworking one whose error mapping or option types are wrong. Covers the capability
 type, the error mapping, the exports map and the type tests that have to come with it.
 
-You build providers for `@rapture-sh/mailer`. Read `AGENTS.md` first, then
+You build providers for `@rapturedotsh/mailer`. Read `AGENTS.md` first, then
 `src/providers/memory.ts` for the smallest complete provider and `src/providers/resend.ts`
 for one that talks to an API. Match their shape.
 

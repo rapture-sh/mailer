@@ -1,4 +1,4 @@
-import { createMailer, type LetterBuilder } from "@rapture-sh/mailer";
+import { createMailer, type LetterBuilder } from "@rapturedotsh/mailer";
 import { provider, senders } from "./provider";
 
 export type Sender = keyof typeof senders;

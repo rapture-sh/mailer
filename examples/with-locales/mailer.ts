@@ -1,4 +1,4 @@
-import type { LetterBuilder } from "@rapture-sh/mailer";
+import type { LetterBuilder } from "@rapturedotsh/mailer";
 import { templates } from "./generated/templates";
 
 /**

@@ -44,7 +44,7 @@ const provider = isProduction
 ```
 
 `mockResend()` is not a second provider. It is the `resend` provider with its base url
-preset to where [mock-resend](https://github.com/rapture-sh/mock-resend) listens, so both
+preset to where [mock-resend](https://github.com/rapturedotsh/mock-resend) listens, so both
 branches of that ternary are the same `ResendProvider` and your development, your CI and
 your deploy all run the one implementation: the same wire format, the same error mapping,
 the same backoff, the same capability types at the call site.
@@ -88,7 +88,7 @@ otherwise rate limit whatever sent next.
 The same idea, as a suite rather than a script:
 
 ```bash
-docker run --rm -p 9100:9100 raptureoss/mock-resend
+docker run --rm -p 9100:9100 rapturedotsh/mock-resend
 ```
 
 ```bash

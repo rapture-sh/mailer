@@ -3,7 +3,7 @@
 // it. Do not edit.
 
 import runtime from "handlebars/runtime";
-import { registerCopyHelpers } from "@rapture-sh/mailer/handlebars";
+import { registerCopyHelpers } from "@rapturedotsh/mailer/handlebars";
 import enGB from "../copy/english.json";
 import deCH from "../copy/swiss-german.json";
 

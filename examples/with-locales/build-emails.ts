@@ -1,4 +1,4 @@
-import { build } from "@rapture-sh/mailer/build";
+import { build } from "@rapturedotsh/mailer/build";
 
 /**
  * The build script, which is yours rather than a command the package ships.

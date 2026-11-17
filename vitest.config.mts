@@ -4,23 +4,23 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     // The package's own name as well as `~`, because a generated templates module imports
-    // `@rapture-sh/mailer` the way a consumer's would. Longest first: these are prefix
+    // `@rapturedotsh/mailer` the way a consumer's would. Longest first: these are prefix
     // matches.
     alias: {
-      "@rapture-sh/mailer/resend": fileURLToPath(
+      "@rapturedotsh/mailer/resend": fileURLToPath(
         new URL("./src/providers/resend.ts", import.meta.url),
       ),
-      "@rapture-sh/mailer/build": fileURLToPath(new URL("./src/build/index.ts", import.meta.url)),
-      "@rapture-sh/mailer/handlebars": fileURLToPath(
+      "@rapturedotsh/mailer/build": fileURLToPath(new URL("./src/build/index.ts", import.meta.url)),
+      "@rapturedotsh/mailer/handlebars": fileURLToPath(
         new URL("./src/handlebars.ts", import.meta.url),
       ),
-      "@rapture-sh/mailer/mock-resend": fileURLToPath(
+      "@rapturedotsh/mailer/mock-resend": fileURLToPath(
         new URL("./src/providers/mock-resend.ts", import.meta.url),
       ),
-      "@rapture-sh/mailer/memory": fileURLToPath(
+      "@rapturedotsh/mailer/memory": fileURLToPath(
         new URL("./src/providers/memory.ts", import.meta.url),
       ),
-      "@rapture-sh/mailer": fileURLToPath(new URL("./src/index.ts", import.meta.url)),
+      "@rapturedotsh/mailer": fileURLToPath(new URL("./src/index.ts", import.meta.url)),
       "~": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },

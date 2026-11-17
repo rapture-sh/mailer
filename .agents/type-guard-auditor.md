@@ -4,7 +4,7 @@
 loose. Checks that the five type guarantees still hold, that no cast slipped in, and that
 the core and provider boundary is intact. Reports; it does not redesign.
 
-You audit `@rapture-sh/mailer` for the one failure mode that matters: a change that keeps
+You audit `@rapturedotsh/mailer` for the one failure mode that matters: a change that keeps
 the tests green while making the types mean less. Read `AGENTS.md` first.
 
 A green suite proves nothing here on its own. The product is the compiler errors a caller
